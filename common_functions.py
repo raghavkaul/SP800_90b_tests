@@ -1,53 +1,66 @@
 #!/usr/bin/env python
 
-from math import gamma,e
+from math import gamma, e
 import sys
-#import numpy as np
 
-def eprint(*args,**kwargs):
-    print(*args,**kwargs, file=sys.stderr)
-        
-def vprint(verbose,*args,**kwargs):
+# import numpy as np
+
+
+def eprint(*args, **kwargs):
+    print(*args, **kwargs, file=sys.stderr)
+
+
+def vprint(verbose, *args, **kwargs):
     if verbose:
-        print(*args,**kwargs, file=sys.stderr)
-       
-# Binary search 
-def pfunc(plocal,r,N):
-    q = 1.0-plocal
-    
+        print(*args, **kwargs, file=sys.stderr)
+
+
+# Binary search
+def pfunc(plocal, r, N):
+    q = 1.0 - plocal
+
     # Find x10
     x = 0.0
-    for j in range(1,11):
-        x = 1.0 + (q*(plocal**r)*(x**(r+1.0)))
+    for j in range(1, 11):
+        x = 1.0 + (q * (plocal ** r) * (x ** (r + 1.0)))
 
     # do the equation
-    result = (1.0 - plocal*x)
-    result = result/((r+1.0 - (r*x))*q)
+    result = 1.0 - plocal * x
+    result = result / ((r + 1.0 - (r * x)) * q)
     try:
-        result = result/(x**(N+1))
+        result = result / (x ** (N + 1))
     except OverflowError:
         # catch OverflowError resulting from large N.
         result = 0.0
     return result
 
-def search_for_p(r,N,iterations=1000, min_plocal=0.0, max_plocal=1.0, tolerance=0.00000001,verbose=False):
+
+def search_for_p(
+    r,
+    N,
+    iterations=1000,
+    min_plocal=0.0,
+    max_plocal=1.0,
+    tolerance=0.00000001,
+    verbose=False,
+):
     # Binary chop search for Plocal
     iteration = 0
     found = False
-    
-    #vprint(verbose,"SEARCH FOR P")
-    #vprint(verbose,f'min {min_plocal}  max {max_plocal} verbose={verbose} r={r} N={N}')
-    while (iteration < iterations):
-        candidate = (min_plocal + max_plocal)/2.0 # start in the middle of the range
-        result = pfunc(candidate,r,N)
-        #print ("iteration =",iteration)
-        #if verbose:
+
+    # vprint(verbose,"SEARCH FOR P")
+    # vprint(verbose,f'min {min_plocal}  max {max_plocal} verbose={verbose} r={r} N={N}')
+    while iteration < iterations:
+        candidate = (min_plocal + max_plocal) / 2.0  # start in the middle of the range
+        result = pfunc(candidate, r, N)
+        # print ("iteration =",iteration)
+        # if verbose:
         #    vprint(verbose,f'candidate {candidate}  min {min_plocal}  max {max_plocal}')
         iteration += 1
         if iteration > iterations:
             found = False
             break
-        elif (result > (0.99-tolerance)) and (result < (0.99+tolerance)):
+        elif (result > (0.99 - tolerance)) and (result < (0.99 + tolerance)):
             found = True
             P_local = candidate
             break
@@ -56,17 +69,18 @@ def search_for_p(r,N,iterations=1000, min_plocal=0.0, max_plocal=1.0, tolerance=
         else:
             max_plocal = candidate
 
-    if (found == False):
-        print ("Warning: P_local not found")
+    if found == False:
+        print("Warning: P_local not found")
 
     return P_local
+
 
 # Binary search provided by Joshua Hill
 
 ## Binary search algorithm to find value of p s.t. the expected value
 ## of the Maurer Universal Statistic equals mu_bar within tolerance
 ## presumes a decreasing function
-#def solve_for_p(mu_bar, n, v, tolerance=1e-09):
+# def solve_for_p(mu_bar, n, v, tolerance=1e-09):
 #    assert n > 0
 #
 #    #This is a hackish way of checking to see if the difference is within approximately 4 ULPs
@@ -145,64 +159,69 @@ def search_for_p(r,N,iterations=1000, min_plocal=0.0, max_plocal=1.0, tolerance=
 # Continued Fraction Computation
 # 6.5.31 Handbook of Mathematical Functions, page 263
 #    Recursive implementation
-def upper_incomplete_gamma(a,x,d=0,iterations=100):
+def upper_incomplete_gamma(a, x, d=0, iterations=100):
     if d == iterations:
-        if ((d % 2) == 1):
-            return 1.0 # end iterations
+        if (d % 2) == 1:
+            return 1.0  # end iterations
         else:
-            m = d/2
-            return x + (m-a)
+            m = d / 2
+            return x + (m - a)
     if d == 0:
-        result = ((x**a) * (e**(-x)))/upper_incomplete_gamma(a,x,d=d+1)
+        result = ((x ** a) * (e ** (-x))) / upper_incomplete_gamma(a, x, d=d + 1)
         return result
-    elif ((d % 2) == 1):
-        m = 1.0+((d-1.0)/2.0)
-        return x+ ((m-a)/(upper_incomplete_gamma(a,x,d=d+1)))
+    elif (d % 2) == 1:
+        m = 1.0 + ((d - 1.0) / 2.0)
+        return x + ((m - a) / (upper_incomplete_gamma(a, x, d=d + 1)))
     else:
-        m = d/2
-        return 1+(m/(upper_incomplete_gamma(a,x,d=d+1)))
+        m = d / 2
+        return 1 + (m / (upper_incomplete_gamma(a, x, d=d + 1)))
+
 
 # 6.5.31 Handbook of Mathematical Functions, page 263
 #    Recursive implementation
-def upper_incomplete_gamma2(a,x,d=0,iterations=100):
+def upper_incomplete_gamma2(a, x, d=0, iterations=100):
     if d == iterations:
-        return 1.0 
+        return 1.0
     if d == 0:
-        result = ((x**a) * (e**(-x)))/upper_incomplete_gamma2(a,x,d=d+1)
+        result = ((x ** a) * (e ** (-x))) / upper_incomplete_gamma2(a, x, d=d + 1)
         return result
     else:
-        m = (d*2)-1
-        return (m-a)+x+ ((d*(a-d))/(upper_incomplete_gamma2(a,x,d=d+1)))
+        m = (d * 2) - 1
+        return (m - a) + x + ((d * (a - d)) / (upper_incomplete_gamma2(a, x, d=d + 1)))
 
-def lower_incomplete_gamma(a,x,d=0,iterations=100):
+
+def lower_incomplete_gamma(a, x, d=0, iterations=100):
     if d == iterations:
-        if ((d % 2) == 1):
-            return 1.0 # end iterations
+        if (d % 2) == 1:
+            return 1.0  # end iterations
         else:
-            m = d/2
-            return x + (m-a)
+            m = d / 2
+            return x + (m - a)
     if d == 0:
-        result = ((x**a) * (e**(-x)))/lower_incomplete_gamma(a,x,d=d+1)
+        result = ((x ** a) * (e ** (-x))) / lower_incomplete_gamma(a, x, d=d + 1)
         return result
-    elif ((d % 2) == 1):
+    elif (d % 2) == 1:
         m = d - 1
-        n = (d-1.0)/2.0
-        return a + m - (((a+n)*x)/lower_incomplete_gamma(a,x,d=d+1))
+        n = (d - 1.0) / 2.0
+        return a + m - (((a + n) * x) / lower_incomplete_gamma(a, x, d=d + 1))
     else:
-        m = d-1
-        n = d/2.0
-        return a+m+((n*x)/(lower_incomplete_gamma(a,x,d=d+1)))
+        m = d - 1
+        n = d / 2.0
+        return a + m + ((n * x) / (lower_incomplete_gamma(a, x, d=d + 1)))
 
-def lower_incomplete_gamma2(a,x):
-    return gamma(a)-upper_incomplete_gamma2(a,x)
 
-def complimentary_incomplete_gamma(a,x):
-    return 1.0-upper_incomplete_gamma(a,x)
+def lower_incomplete_gamma2(a, x):
+    return gamma(a) - upper_incomplete_gamma2(a, x)
+
+
+def complimentary_incomplete_gamma(a, x):
+    return 1.0 - upper_incomplete_gamma(a, x)
+
 
 # Scipy name mappings
-def gammainc(a,x):
-    return lower_incomplete_gamma(a,x)/gamma(a)
+def gammainc(a, x):
+    return lower_incomplete_gamma(a, x) / gamma(a)
 
-def gammaincc(a,x):
-    return upper_incomplete_gamma(a,x)/gamma(a)
-   
+
+def gammaincc(a, x):
+    return upper_incomplete_gamma(a, x) / gamma(a)

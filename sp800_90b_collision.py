@@ -11,22 +11,26 @@ from common_functions import *
 
 from common_functions import *
 
+
 def pq_func(p):
-    q = 1.0-p
+    q = 1.0 - p
 
-    z = 1.0/q
+    z = 1.0 / q
 
-    fq = upper_incomplete_gamma(3,z) * (z**(-3.0)) * (e**(z))
+    fq = upper_incomplete_gamma(3, z) * (z ** (-3.0)) * (e ** (z))
 
-    result = ((p*(q**-2.0)) * (1.0 + (0.5*((1/p)-(1/q)))) * fq)
-    result = result - ((p*(q**-1.0)) * 0.5 * ((1/p)-(1/q)))
+    result = (p * (q ** -2.0)) * (1.0 + (0.5 * ((1 / p) - (1 / q)))) * fq
+    result = result - ((p * (q ** -1.0)) * 0.5 * ((1 / p) - (1 / q)))
 
     return result
 
-def collision(bits,symbol_length=1,verbose=True):
-    vprint(verbose,"Collision Test")
+
+def collision(bits, symbol_length=1, verbose=True):
+    vprint(verbose, "Collision Test")
     if symbol_length > 1:
-        vprint(verbose,"Warning: Collision test is only to be run with symbol length of 1")
+        vprint(
+            verbose, "Warning: Collision test is only to be run with symbol length of 1"
+        )
 
     t = list()
 
@@ -38,43 +42,43 @@ def collision(bits,symbol_length=1,verbose=True):
     found = False
     while True:
         j = index
-        if bits[index-1]==bits[index]:
+        if bits[index - 1] == bits[index]:
             found = True
-            j=index+1
-            #vprint(verbose,"  ",bits[index-1:j])
-        elif j > (len(bits)-2):
+            j = index + 1
+            # vprint(verbose,"  ",bits[index-1:j])
+        elif j > (len(bits) - 2):
             found = False
             break
         else:
             found = True
-            j = index+2
-            #vprint(verbose,"  ",bits[index-1:j])
+            j = index + 2
+            # vprint(verbose,"  ",bits[index-1:j])
 
         # Step 3
-        if (found == True):
+        if found == True:
             v = v + 1
             t.append(j - index + 1)
-            index = j+1
+            index = j + 1
 
         # Step 4
-        if index > (len(bits)-2):
+        if index > (len(bits) - 2):
             break
 
-    #vprint(verbose,"   T = ",t)
+    # vprint(verbose,"   T = ",t)
     # Step 5
     t_sum = 0.0
     sq_sum = 0.0
     t_sum = sum(t)
-    x_bar = t_sum/v 
-    vprint(verbose,"   x_bar         ",x_bar)
- 
+    x_bar = t_sum / v
+    vprint(verbose, "   x_bar         ", x_bar)
+
     for ti in t:
-        sq_sum += (ti-x_bar)**2
-    sigma_hat = math.sqrt((1.0/(v-1))*sq_sum)
-    vprint(verbose,"   sigma_hat     ",sigma_hat)
+        sq_sum += (ti - x_bar) ** 2
+    sigma_hat = math.sqrt((1.0 / (v - 1)) * sq_sum)
+    vprint(verbose, "   sigma_hat     ", sigma_hat)
     # Step 6
-    x_bar_prime = x_bar - 2.576*(sigma_hat/math.sqrt(v))
-    vprint(verbose,"   x_bar_prime   ",x_bar_prime)
+    x_bar_prime = x_bar - 2.576 * (sigma_hat / math.sqrt(v))
+    vprint(verbose, "   x_bar_prime   ", x_bar_prime)
 
     # Step 7
     iterations = 1000
@@ -85,49 +89,87 @@ def collision(bits,symbol_length=1,verbose=True):
     p_max = 1.0
 
     found = False
-    while (not(found)):
+    while not (found):
         candidate = pq_func(p_mid)
         if candidate > x_bar_prime:
             p_min = p_mid
-            p_mid = (p_min+p_max)/2.0
-            #vprint(verbose,"   G Last =",last_p_mid," Pmid =",p_mid, " Candidate = ",candidate," tgt = ",x_bar_prime)
+            p_mid = (p_min + p_max) / 2.0
+            # vprint(verbose,"   G Last =",last_p_mid," Pmid =",p_mid, " Candidate = ",candidate," tgt = ",x_bar_prime)
         elif candidate < x_bar_prime:
             p_max = p_mid
-            p_mid = (p_min+p_max)/2.0
-            #vprint(verbose,"   L Last =",last_p_mid," Pmid =",p_mid, " Candidate = ",candidate," tgt = ",x_bar_prime)
+            p_mid = (p_min + p_max) / 2.0
+            # vprint(verbose,"   L Last =",last_p_mid," Pmid =",p_mid, " Candidate = ",candidate," tgt = ",x_bar_prime)
         elif (candidate == x_bar_prime) or (p_mid == last_p_mid):
             found = True
             p = p_mid
-            #vprint(verbose,"   M Last =",last_p_mid," Pmid =",p_mid, " Candidate = ",candidate," tgt = ",x_bar_prime)
+            # vprint(verbose,"   M Last =",last_p_mid," Pmid =",p_mid, " Candidate = ",candidate," tgt = ",x_bar_prime)
             break
         last_p_mid = p_mid
 
         iteration += 1
         if iteration > iterations:
             found = False
-            break 
+            break
     # step 8
 
     if found:
-        if (p<0.5):
-            p = 1.0-p
-        vprint(verbose,"   p =",p)
-        min_entropy = -math.log(p,2.0)
-        vprint(verbose,"   min_entropy =",min_entropy)
+        if p < 0.5:
+            p = 1.0 - p
+        vprint(verbose, "   p =", p)
+        min_entropy = -math.log(p, 2.0)
+        vprint(verbose, "   min_entropy =", min_entropy)
     else:
-        vprint(verbose,"   p = 0.5")
+        vprint(verbose, "   p = 0.5")
         min_entropy = 1.0
-        vprint(verbose,"   min_entropy = 1.0")
+        vprint(verbose, "   min_entropy = 1.0")
 
-    return(False, None, min_entropy)
+    return (False, None, min_entropy)
+
 
 if __name__ == "__main__":
-    bits = [1,0,0,0,1,1,1,0,0,
-            1,0,1,0,1,0,1,1,1,
-            0,0,1,1,0,0,0,1,1,
-            1,0,0,1,0,1,0,1,0,
-            1,1,1,0]
+    bits = [
+        1,
+        0,
+        0,
+        0,
+        1,
+        1,
+        1,
+        0,
+        0,
+        1,
+        0,
+        1,
+        0,
+        1,
+        0,
+        1,
+        1,
+        1,
+        0,
+        0,
+        1,
+        1,
+        0,
+        0,
+        0,
+        1,
+        1,
+        1,
+        0,
+        0,
+        1,
+        0,
+        1,
+        0,
+        1,
+        0,
+        1,
+        1,
+        1,
+        0,
+    ]
 
-    (iid_assumption,T,min_entropy) = collision(bits,1)
-    
-    vprint(verbose,"min_entropy = ",min_entropy)
+    (iid_assumption, T, min_entropy) = collision(bits, 1)
+
+    vprint(verbose, "min_entropy = ", min_entropy)
