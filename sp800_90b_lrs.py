@@ -1,11 +1,3 @@
-#!/usr/bin/env python
-
-# sp_800_90b_lrs.py
-#
-
-from __future__ import print_function
-from __future__ import division
-
 import math
 import operator as op
 from functools import reduce
@@ -128,7 +120,7 @@ def lrs(bits, symbol_length=1, verbose=True, threshold=35):
     vprint(verbose, "   DICT SIZE:", len(tuple_dict))
     # Step 2
     last_max = threshold + 100
-    last_v = None
+    found_v = last_v = None
     for v in range(1, min(L + 1, 128)):
         last_max = max_count
         max_count = 0
@@ -158,6 +150,9 @@ def lrs(bits, symbol_length=1, verbose=True, threshold=35):
             break
         last_v = v
     vprint(verbose, "   DICT SIZE:", len(tuple_dict))
+
+    if not found_v:
+        raise CannotCompute
     v = found_v
     vprint(verbose, "    v :", v)
 
