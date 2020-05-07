@@ -270,9 +270,12 @@ else:
             m = __import__("sp800_90b_" + testname)
             func = getattr(m, testname)
 
-            (iid_assumption, T, min_entropy) = func(
-                bits, symbol_length, verbose=verbose
-            )
+            try:
+                (iid_assumption, T, min_entropy) = func(
+                    bits, symbol_length, verbose=verbose
+                )
+            except CannotCompute:
+                pass
 
             summary_name = testname
 

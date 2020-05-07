@@ -1,9 +1,5 @@
-#!/usr/bin/env python
-
 from math import gamma, e
 import sys
-
-# import numpy as np
 
 
 def eprint(*args, **kwargs):
@@ -225,3 +221,7 @@ def gammainc(a, x):
 
 def gammaincc(a, x):
     return upper_incomplete_gamma(a, x) / gamma(a)
+
+
+class CannotCompute(Exception):
+    pass
