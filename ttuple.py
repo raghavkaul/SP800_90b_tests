@@ -95,8 +95,7 @@ def ttuple(bits, symbol_length=1, verbose=True, threshold=35):
     if found:
         vprint(verbose, "   Found t = ", t)
     else:
-        vprint(verbose, "   Error, no t found")
-        exit()
+        raise CannotCompute("No t found.")
 
     # Step 2
     for i in range(1, t + 1):
