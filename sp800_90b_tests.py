@@ -230,7 +230,7 @@ bits = read_bits_from_file(
 
 if args.testname:
     if args.testname in testlist:
-        m = __import__("sp800_90b_" + args.testname)
+        m = __import__(args.testname)
         func = getattr(m, args.testname)
         vprint(verbose, "TEST: %s" % args.testname)
         (iid_assumption, T, entropy_estimate) = func(
@@ -267,7 +267,7 @@ else:
 
             results.append((summary_name, summary_t, summary_me))
         else:
-            m = __import__("sp800_90b_" + testname)
+            m = __import__(testname)
             func = getattr(m, testname)
 
             try:
