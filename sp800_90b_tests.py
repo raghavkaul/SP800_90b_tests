@@ -275,6 +275,7 @@ else:
                     bits, symbol_length, verbose=verbose
                 )
             except CannotCompute:
+                print(f"Can't compute {testname}, skipping...")
                 pass
 
             summary_name = testname

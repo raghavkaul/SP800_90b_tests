@@ -53,6 +53,9 @@ def compression(bits, symbol_length=1, verbose=True, d=1000):
             "   Warning, Compression test treats data at 1 bit symbols. Setting symbol length to 1",
         )
 
+    if L < d:
+        raise CannotCompute
+
     # vprint(verbose,bits)
     vprint(verbose, "   Symbol Length        1")
     vprint(verbose, "   Number of bits      ", L)
