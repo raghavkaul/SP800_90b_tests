@@ -1,14 +1,6 @@
-#!/usr/bin/env python
-
-# sp_800_90b_ttuple.py
-#
-
-
-from __future__ import print_function
-from __future__ import division
-
 import math
-from common_functions import *
+
+from .utils import *
 
 
 def bits_to_int(bits):
@@ -27,21 +19,21 @@ def int_to_bits(s, l):
 
 
 def ttuple(bits, symbol_length=1, verbose=True, threshold=35):
-    vprint(verbose, "T-TUPLE Test")
+    logger.debug("T-TUPLE Test")
     bitcount = len(bits)
     L = bitcount // symbol_length
 
-    # vprint(verbose,bits)
-    vprint(verbose, "   Symbol Length        ", symbol_length)
-    vprint(verbose, "   Number of bits       ", (L * symbol_length))
-    vprint(verbose, "   Number of Symbols    ", L)
-    vprint(verbose, "   t-threshold = ", threshold)
+    # logger.debug(bits)
+    logger.debug("   Symbol Length        ", symbol_length)
+    logger.debug("   Number of bits       ", (L * symbol_length))
+    logger.debug("   Number of Symbols    ", L)
+    logger.debug("   t-threshold = ", threshold)
 
     # Split bits into integer symbols
     symbols = [
         bits_to_int(bits[symbol_length * i : symbol_length * (i + 1)]) for i in range(L)
     ]
-    # vprint(verbose,symbols)
+    # logger.debug(symbols)
 
     # Steps 1 and 2
     # Find-t
@@ -61,9 +53,9 @@ def ttuple(bits, symbol_length=1, verbose=True, threshold=35):
     ):  # (max_count == None) or (max_count > threshold):
         max_count = 0
         max_tuple = None
-        vprint(verbose, "   Testing t=", t, end="")
+        logger.debug("   Testing t=", t, end="")
         tuple_position_count = 1 + L - t
-        # vprint(verbose,"   Searching through ",tuple_position_count," positions")
+        # logger.debug("   Searching through ",tuple_position_count," positions")
 
         for i in range(tuple_position_count):
             the_tuple = tuple(symbols[i : i + t])
@@ -79,21 +71,21 @@ def ttuple(bits, symbol_length=1, verbose=True, threshold=35):
         Q[t] = max_count
         last_five_maxes = last_five_maxes[1:]
         last_five_maxes.append(max_count)
-        vprint(verbose, "   max tuple count: ", max_count)
+        logger.debug("   max tuple count: ", max_count)
         if (max(last_five_maxes) == 1) or (max(last_five_maxes) < (threshold - 10)):
             break
-        # vprint(verbose,"   Q[t] = ",max_count, "  Q[i]=",Q[1:t+1])
+        # logger.debug("   Q[t] = ",max_count, "  Q[i]=",Q[1:t+1])
 
     found = False
     for pos, qt in reversed(list(enumerate(Q[: L + 1]))):
-        # vprint(verbose,"   pos=",pos, "  qt=",qt)
+        # logger.debug("   pos=",pos, "  qt=",qt)
         if qt >= threshold:
             found = True
             t = pos
             break
 
     if found:
-        vprint(verbose, "   Found t = ", t)
+        logger.debug("   Found t = ", t)
     else:
         raise CannotCompute("No t found.")
 
@@ -108,9 +100,9 @@ def ttuple(bits, symbol_length=1, verbose=True, threshold=35):
     min_entropy_per_symbol = -math.log(pu, 2.0)
     min_entropy = min_entropy_per_symbol / symbol_length
 
-    vprint(verbose, "   pu                   ", pu)
-    vprint(verbose, "   Symbol Min Entropy   ", min_entropy_per_symbol)
-    vprint(verbose, "   Min Entropy per bit  ", min_entropy)
+    logger.debug("   pu                   ", pu)
+    logger.debug("   Symbol Min Entropy   ", min_entropy_per_symbol)
+    logger.debug("   Min Entropy per bit  ", min_entropy)
 
     return (False, None, min_entropy)
 
@@ -122,4 +114,4 @@ if __name__ == "__main__":
         bits = bits + int_to_bits(s, 2)
     (iid_assumption, T, min_entropy) = ttuple(bits, symbol_length=2, threshold=3)
 
-    vprint(verbose, "min_entropy = ", min_entropy)
+    logger.debug( "min_entropy = ", min_entropy)

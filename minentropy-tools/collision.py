@@ -1,15 +1,6 @@
-#!/usr/bin/env python
-
-# sp_800_90b_collision.py
-#
-
-from __future__ import print_function
-from __future__ import division
-
 import math
-from common_functions import *
 
-from common_functions import *
+from .utils import *
 
 
 def pq_func(p):
@@ -26,9 +17,9 @@ def pq_func(p):
 
 
 def collision(bits, symbol_length=1, verbose=True):
-    vprint(verbose, "Collision Test")
+    logger.debug("Collision Test")
     if symbol_length > 1:
-        vprint(
+        logger.debug(
             verbose, "Warning: Collision test is only to be run with symbol length of 1"
         )
 
@@ -45,14 +36,14 @@ def collision(bits, symbol_length=1, verbose=True):
         if bits[index - 1] == bits[index]:
             found = True
             j = index + 1
-            # vprint(verbose,"  ",bits[index-1:j])
+            # logger.debug("  ",bits[index-1:j])
         elif j > (len(bits) - 2):
             found = False
             break
         else:
             found = True
             j = index + 2
-            # vprint(verbose,"  ",bits[index-1:j])
+            # logger.debug("  ",bits[index-1:j])
 
         # Step 3
         if found == True:
@@ -64,21 +55,21 @@ def collision(bits, symbol_length=1, verbose=True):
         if index > (len(bits) - 2):
             break
 
-    # vprint(verbose,"   T = ",t)
+    # logger.debug("   T = ",t)
     # Step 5
     t_sum = 0.0
     sq_sum = 0.0
     t_sum = sum(t)
     x_bar = t_sum / v
-    vprint(verbose, "   x_bar         ", x_bar)
+    logger.debug("   x_bar         ", x_bar)
 
     for ti in t:
         sq_sum += (ti - x_bar) ** 2
     sigma_hat = math.sqrt((1.0 / (v - 1)) * sq_sum)
-    vprint(verbose, "   sigma_hat     ", sigma_hat)
+    logger.debug("   sigma_hat     ", sigma_hat)
     # Step 6
     x_bar_prime = x_bar - 2.576 * (sigma_hat / math.sqrt(v))
-    vprint(verbose, "   x_bar_prime   ", x_bar_prime)
+    logger.debug("   x_bar_prime   ", x_bar_prime)
 
     # Step 7
     iterations = 1000
@@ -94,15 +85,15 @@ def collision(bits, symbol_length=1, verbose=True):
         if candidate > x_bar_prime:
             p_min = p_mid
             p_mid = (p_min + p_max) / 2.0
-            # vprint(verbose,"   G Last =",last_p_mid," Pmid =",p_mid, " Candidate = ",candidate," tgt = ",x_bar_prime)
+            # logger.debug("   G Last =",last_p_mid," Pmid =",p_mid, " Candidate = ",candidate," tgt = ",x_bar_prime)
         elif candidate < x_bar_prime:
             p_max = p_mid
             p_mid = (p_min + p_max) / 2.0
-            # vprint(verbose,"   L Last =",last_p_mid," Pmid =",p_mid, " Candidate = ",candidate," tgt = ",x_bar_prime)
+            # logger.debug("   L Last =",last_p_mid," Pmid =",p_mid, " Candidate = ",candidate," tgt = ",x_bar_prime)
         elif (candidate == x_bar_prime) or (p_mid == last_p_mid):
             found = True
             p = p_mid
-            # vprint(verbose,"   M Last =",last_p_mid," Pmid =",p_mid, " Candidate = ",candidate," tgt = ",x_bar_prime)
+            # logger.debug("   M Last =",last_p_mid," Pmid =",p_mid, " Candidate = ",candidate," tgt = ",x_bar_prime)
             break
         last_p_mid = p_mid
 
@@ -115,13 +106,13 @@ def collision(bits, symbol_length=1, verbose=True):
     if found:
         if p < 0.5:
             p = 1.0 - p
-        vprint(verbose, "   p =", p)
+        logger.debug("   p =", p)
         min_entropy = -math.log(p, 2.0)
-        vprint(verbose, "   min_entropy =", min_entropy)
+        logger.debug("   min_entropy =", min_entropy)
     else:
-        vprint(verbose, "   p = 0.5")
+        logger.debug("   p = 0.5")
         min_entropy = 1.0
-        vprint(verbose, "   min_entropy = 1.0")
+        logger.debug("   min_entropy = 1.0")
 
     return (False, None, min_entropy)
 
@@ -172,4 +163,4 @@ if __name__ == "__main__":
 
     (iid_assumption, T, min_entropy) = collision(bits, 1)
 
-    vprint(verbose, "min_entropy = ", min_entropy)
+    logger.debug( "min_entropy = ", min_entropy)

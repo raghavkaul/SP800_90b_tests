@@ -1,14 +1,10 @@
-from math import gamma, e
+import logging
 import sys
 
+from math import gamma, e
 
-def eprint(*args, **kwargs):
-    print(*args, **kwargs, file=sys.stderr)
-
-
-def vprint(verbose, *args, **kwargs):
-    if verbose:
-        print(*args, **kwargs, file=sys.stderr)
+logger = logging.getLogger()
+logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
 
 
 # Binary search
@@ -44,14 +40,14 @@ def search_for_p(
     iteration = 0
     found = False
 
-    # vprint(verbose,"SEARCH FOR P")
-    # vprint(verbose,f'min {min_plocal}  max {max_plocal} verbose={verbose} r={r} N={N}')
+    # logger.debug("SEARCH FOR P")
+    # logger.debug(f'min {min_plocal}  max {max_plocal} verbose={verbose} r={r} N={N}')
     while iteration < iterations:
         candidate = (min_plocal + max_plocal) / 2.0  # start in the middle of the range
         result = pfunc(candidate, r, N)
         # print ("iteration =",iteration)
         # if verbose:
-        #    vprint(verbose,f'candidate {candidate}  min {min_plocal}  max {max_plocal}')
+        #    logger.debug(f'candidate {candidate}  min {min_plocal}  max {max_plocal}')
         iteration += 1
         if iteration > iterations:
             found = False
@@ -221,7 +217,3 @@ def gammainc(a, x):
 
 def gammaincc(a, x):
     return upper_incomplete_gamma(a, x) / gamma(a)
-
-
-class CannotCompute(Exception):
-    pass

@@ -1,13 +1,5 @@
-#!/usr/bin/env python
-
-# sp_800_90b_compression.py
-#
-
-from __future__ import print_function
-from __future__ import division
-
 import math
-from common_functions import *
+from .utils import *
 
 
 def bits_to_int(bits):
@@ -44,11 +36,11 @@ def G(z, v, d, L):
 
 
 def compression(bits, symbol_length=1, verbose=True, d=1000):
-    vprint(verbose, "COMPRESSION Test")
+    logger.debug("COMPRESSION Test")
     L = len(bits)
 
     if symbol_length != 1:
-        vprint(
+        logger.debug(
             verbose,
             "   Warning, Compression test treats data at 1 bit symbols. Setting symbol length to 1",
         )
@@ -56,23 +48,23 @@ def compression(bits, symbol_length=1, verbose=True, d=1000):
     if L < d:
         raise CannotCompute
 
-    # vprint(verbose,bits)
-    vprint(verbose, "   Symbol Length        1")
-    vprint(verbose, "   Number of bits      ", L)
+    # logger.debug(bits)
+    logger.debug("   Symbol Length        1")
+    logger.debug("   Number of bits      ", L)
 
     # step 1
     b = 6
     blocks = L // b
-    s_prime = [0,] + [bits_to_int(bits[b * i : b * (i + 1)]) for i in range(blocks)]
+    s_prime = [0,] + [int(bits[b * i : b * (i + 1)], 2) for i in range(blocks)]
 
-    vprint(verbose, "   Number of blocks    ", blocks)
+    logger.debug("   Number of blocks    ", blocks)
 
     # Step 2
     dict_data = s_prime[1 : d + 1]
     v = blocks - d
     test_data = s_prime[d + 1 :]
 
-    vprint(verbose, "   v                   ", v)
+    logger.debug("   v                   ", v)
 
     # Step 3
     dictionary = [
@@ -85,8 +77,8 @@ def compression(bits, symbol_length=1, verbose=True, d=1000):
     # Step 4
     D = [0,] + [0 for i in range(v)]
     for i in range(d + 1, blocks + 1):
-        # vprint(verbose,"  i = ",i,end="")
-        # vprint(verbose,"  s_prime[%d]=" % i,s_prime[i])
+        # logger.debug("  i = ",i,end="")
+        # logger.debug("  s_prime[%d]=" % i,s_prime[i])
         if dictionary[s_prime[i]] != 0:
             # print ("D[i-d] = D[%d - %d] = D[%d]" % (i,d,i-d))
             D[i - d] = i - dictionary[s_prime[i]]
@@ -99,11 +91,11 @@ def compression(bits, symbol_length=1, verbose=True, d=1000):
 
     x_sum = 0.0
     for i in range(1, v + 1):
-        # vprint(verbose,"   D[",i,"] = ",D[i], "log2(D[i])=",math.log(D[i],2))
+        # logger.debug("   D[",i,"] = ",D[i], "log2(D[i])=",math.log(D[i],2))
         x_sum += math.log(D[i], 2)
     x_bar = x_sum / v
 
-    vprint(verbose, "   x_bar               ", x_bar)
+    logger.debug("   x_bar               ", x_bar)
 
     c = 0.5907
 
@@ -114,12 +106,12 @@ def compression(bits, symbol_length=1, verbose=True, d=1000):
     s_sum = s_sum - (x_bar ** 2)
     sigma_hat = c * math.sqrt(s_sum)
 
-    vprint(verbose, "   sigma_hat           ", sigma_hat)
+    logger.debug("   sigma_hat           ", sigma_hat)
 
     # Step 6
 
     x_bar_prime = x_bar - ((2.576 * sigma_hat) / math.sqrt(v))
-    vprint(verbose, "   x_bar_prime         ", x_bar_prime)
+    logger.debug("   x_bar_prime         ", x_bar_prime)
 
     # Step 7
 
@@ -127,8 +119,8 @@ def compression(bits, symbol_length=1, verbose=True, d=1000):
     p_max = 1.0
     p_mid = (p_min + p_max) / 2.0
 
-    vprint(verbose, "   p_min               ", p_min)
-    vprint(verbose, "   p_max               ", p_max)
+    logger.debug("   p_min               ", p_min)
+    logger.debug("   p_max               ", p_max)
     iterations = 1000
     iteration = 0
 
@@ -153,11 +145,11 @@ def compression(bits, symbol_length=1, verbose=True, d=1000):
     # Step 8
     if found:
         min_entropy = -math.log(p_mid, 2) / b
-        vprint(verbose, "   min_entropy =", min_entropy)
+        logger.debug("   min_entropy =", min_entropy)
         return (False, None, min_entropy)
     else:
         min_entropy = 1.0
-        vprint(verbose, "   min_entropy = 1.0")
+        logger.debug("   min_entropy = 1.0")
         return (False, None, min_entropy)
 
 
@@ -215,4 +207,4 @@ if __name__ == "__main__":
 
     (iid_assumption, T, min_entropy) = compression(bits, 1, d=4)
 
-    vprint(verbose, "min_entropy = ", min_entropy)
+    logger.debug( "min_entropy = ", min_entropy)

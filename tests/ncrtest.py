@@ -1,13 +1,8 @@
-#!/usr/bin/env python
-
-from __future__ import print_function
-from __future__ import division
-
 import math
 import operator as op
-from functools import reduce
-
 import random
+
+from functools import reduce
 
 
 def new_nCr(n, r):

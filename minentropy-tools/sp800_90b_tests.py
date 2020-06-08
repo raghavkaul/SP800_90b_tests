@@ -1,25 +1,13 @@
 #!/usr/bin/env python
-
-# sp800_90_tests.py
-#
-# This file is part of sp800_90_tests.
-#
-
-from __future__ import print_function
-
 import argparse
 import sys
-from mpmath import *
-from common_functions import *
 
-# do min on list with None in it
-def holey_min(l):
-    m = 100000000000
-    for c in l:
-        if c != None:
-            if c < m:
-                m = c
-    return m
+from . import errors
+
+from .utils import logger
+
+
+holey_min = lambda l: min(filter(None, l))
 
 
 def read_bits_from_file(
@@ -56,9 +44,9 @@ def read_bits_from_file(
 
         else:
             break
-    vprint(verbose, "LEN bitlist = ", len(bitlist))
-    vprint(verbose, "symbols = ", symbols)
-    vprint(verbose, "bitcount = ", bitcount)
+    logger.debug("LEN bitlist = ", len(bitlist))
+    logger.debug("symbols = ", symbols)
+    logger.debug("bitcount = ", bitcount)
     return bitlist
 
 
@@ -117,7 +105,11 @@ parser.add_argument(
     help="Extract test conditions from filename",
 )
 parser.add_argument(
-    "-c", "--csv", action="store_true", default=False, help="Output data in CSV format"
+    "-c",
+    "--csv",
+    action="store_true",
+    default=False,
+    help="Output data in CSV format",
 )
 
 args = parser.parse_args()
@@ -232,27 +224,30 @@ if args.testname:
     if args.testname in testlist:
         m = __import__(args.testname)
         func = getattr(m, args.testname)
-        vprint(verbose, "TEST: %s" % args.testname)
+        logger.debug("TEST: %s" % args.testname)
         (iid_assumption, T, entropy_estimate) = func(
             bits, symbol_length, verbose=verbose
         )
 
         if iid_assumption:
-            eprint("IID Assumption : T = ", str(T))
+            logger.info("IID Assumption : T = ", str(T))
         else:
-            eprint("Min Entropy Estimate : H_inf(X) = ", str(entropy_estimate))
+            logger.info("Min Entropy Estimate : H_inf(X) = ", str(entropy_estimate))
     else:
-        eprint("Test name (%s) not known" % args.testname)
+        logger.fatal("Test name (%s) not known" % args.testname)
         exit()
 else:
     results = list()
     me_list = list()
     t_list = list()
     for testname in testlist:
-        vprint(verbose, "TEST: %s" % testname)
-        if (testname == "markov" or testname == "collision") and (symbol_length > 1):
-            vprint(
-                verbose, "  Skipping test %s, it only runs on 1 bit symbols" % testname
+        logger.debug("TEST: %s" % testname)
+        if (testname == "markov" or testname == "collision") and (
+            symbol_length > 1
+        ):
+            logger.debug(
+                verbose,
+                "  Skipping test %s, i:t only runs on 1 bit symbols" % testname,
             )
             iid_assumption = False
 
@@ -274,14 +269,14 @@ else:
                 (iid_assumption, T, min_entropy) = func(
                     bits, symbol_length, verbose=verbose
                 )
-            except CannotCompute:
+            except errors.CannotCompute:
                 print(f"Can't compute {testname}, skipping...")
                 pass
 
             summary_name = testname
 
             if T != None:
-                vprint(verbose, "  T=" + str(T))
+                logger.debug("  T=" + str(T))
                 summary_t = str(T)
                 t_list.append(T)
             else:
@@ -305,26 +300,25 @@ else:
         astring = ",".join(vlist)
         print(astring)
 
-        vprint(verbose, "")
-        vprint(verbose, "SUMMARY")
-        vprint(verbose, "-------")
-        vprint(verbose, "File            ", filename)
-        vprint(verbose, "Bits per symbol ", symbol_length)
-        vprint(verbose, "Symbol Count    ", len(bits) // symbol_length)
-        vprint(verbose, "")
-        vprint(verbose, "NAME".ljust(40), "T".ljust(18), "MIN ENTROPY")
-        vprint(verbose, "----".ljust(40), "-".ljust(18), "-----------")
+        logger.debug("")
+        logger.debug("SUMMARY")
+        logger.debug("-------")
+        logger.debug("File            ", filename)
+        logger.debug("Bits per symbol ", symbol_length)
+        logger.debug("Symbol Count    ", len(bits) // symbol_length)
+        logger.debug("")
+        logger.debug("NAME".ljust(40), "T".ljust(18), "MIN ENTROPY")
+        logger.debug("----".ljust(40), "-".ljust(18), "-----------")
         for result in results:
             (summary_name, summary_t, summary_me) = result
-            vprint(
-                verbose,
+            logger.debug(
                 summary_name.ljust(40),
                 str(summary_t).ljust(18),
                 str(summary_me),
             )
 
-        vprint(verbose, "Minimum Min Entropy = ", min_min_entropy)
-        vprint(verbose, "COMPLETE")
+        logger.debug("Minimum Min Entropy = ", min_min_entropy)
+        logger.debug("COMPLETE")
     else:
         print("SUMMARY")
         print("-------")
@@ -336,7 +330,11 @@ else:
         print("----".ljust(40), "-".ljust(18), "-----------")
         for result in results:
             (summary_name, summary_t, summary_me) = result
-            print(summary_name.ljust(40), str(summary_t).ljust(18), str(summary_me))
+            print(
+                summary_name.ljust(40),
+                str(summary_t).ljust(18),
+                str(summary_me),
+            )
         min_min_entropy = holey_min(me_list)
 
         print("Minimum Min Entropy = ", min_min_entropy)

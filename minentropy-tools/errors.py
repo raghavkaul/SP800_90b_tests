@@ -1,0 +1,2 @@
+class CannotCompute(Exception):
+    pass

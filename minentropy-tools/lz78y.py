@@ -1,13 +1,6 @@
-#!/usr/bin/env python
-
-# sp_800_90b_lz78y.py
-#
-
-from __future__ import print_function
-from __future__ import division
-
 import math
-from common_functions import *
+
+from .utils import *
 
 precision = 300
 
@@ -42,34 +35,34 @@ def p_local_func(p, r, N):
     x = 1.0
     for i in range(1, 11):
         x = 1.0 + q * (p ** r) * (x ** (r + 1))
-    # vprint(verbose,"     x : ",x)
+    # logger.debug("     x : ",x)
     result = (1.0 - (p * x)) / ((r + 1.0 - (r * x)) * q)
     result = result / (x ** (N + 1))
     return result
 
 
 def lz78y(bits, symbol_length=1, verbose=True, B=16):
-    vprint(verbose, "LZ78Y Test")
+    logger.debug("LZ78Y Test")
     bitcount = len(bits)
     L = bitcount // symbol_length
 
-    # vprint(verbose,bits)
-    vprint(verbose, "    Symbol Length        ", symbol_length)
-    vprint(verbose, "    Number of bits       ", (L * symbol_length))
-    vprint(verbose, "    Number of Symbols    ", L)
+    # logger.debug(bits)
+    logger.debug("    Symbol Length        ", symbol_length)
+    logger.debug("    Number of bits       ", (L * symbol_length))
+    logger.debug("    Number of Symbols    ", L)
 
     # Split bits into integer symbols
     #   prepend with 0, so the symbols are indexed from 1
-    # vprint(verbose,bits)
+    # logger.debug(bits)
     S = [0,] + [
         bits_to_int(bits[symbol_length * i : symbol_length * (i + 1)]) for i in range(L)
     ]
-    # vprint(verbose,S)
+    # logger.debug(S)
     # Step 1
     N = L - B - 1
 
-    vprint(verbose, "    B                    ", B)
-    vprint(verbose, "    N                    ", N)
+    logger.debug("    B                    ", B)
+    logger.debug("    N                    ", N)
     correct = [0 for x in range(N + 1)]
     maxDictionarySize = 65536
 
@@ -79,8 +72,7 @@ def lz78y(bits, symbol_length=1, verbose=True, B=16):
 
     # Step 3
     if verbose:
-        vprint(
-            verbose,
+        logger.debug(
             "    ",
             "i".ljust(4),
             "Add to D".ljust(20),
@@ -132,9 +124,9 @@ def lz78y(bits, symbol_length=1, verbose=True, B=16):
             correct[i - B - 1] = 1
 
         # print out table line
-        # vprint(verbose,add_to_d)
-        # vprint(verbose,prevlist)
-        # vprint(verbose,maxdlist)
+        # logger.debug(add_to_d)
+        # logger.debug(prevlist)
+        # logger.debug(maxdlist)
         # if verbose:
         #    for pad in range(20):
         #        add_to_d.append("-")
@@ -142,10 +134,10 @@ def lz78y(bits, symbol_length=1, verbose=True, B=16):
         #        maxdlist.append("-")
         #    for line in range(4):
         #        if line == 0:
-        #            vprint(verbose,"    ",str(i).ljust(4),add_to_d[line].ljust(20), prevlist[line].ljust(14), str(maxcount).ljust(16),
+        #            logger.debug("    ",str(i).ljust(4),add_to_d[line].ljust(20), prevlist[line].ljust(14), str(maxcount).ljust(16),
         #                        str(prediction).ljust(12),str(S[i]).ljust(4), correct[i-B-1])
         #        else:
-        #            vprint(verbose,"    "," ".ljust(4),add_to_d[line].ljust(20), prevlist[line].ljust(14), str(maxcount).ljust(16),
+        #            logger.debug("    "," ".ljust(4),add_to_d[line].ljust(20), prevlist[line].ljust(14), str(maxcount).ljust(16),
         #                        " ".ljust(12)," ".ljust(4), " ")
     # step 4
     # C = sum(correct)
@@ -154,7 +146,7 @@ def lz78y(bits, symbol_length=1, verbose=True, B=16):
         if i == 1:
             C += 1
 
-    # vprint(verbose,"    correct              ",correct)
+    # logger.debug("    correct              ",correct)
     p_global = float(C) / float(N)
     if p_global == 0:
         p_prime_global = 1 - (0.001 ** (1.0 / N))
@@ -164,8 +156,8 @@ def lz78y(bits, symbol_length=1, verbose=True, B=16):
             p_global + (2.576 * math.sqrt((p_global * (1.0 - p_global)) / (N - 1.0))),
         )
 
-    vprint(verbose, "    p_global             ", p_global)
-    vprint(verbose, "    p_prime_global       ", p_prime_global)
+    logger.debug("    p_global             ", p_global)
+    logger.debug("    p_prime_global       ", p_prime_global)
 
     # Step 5
     #  Find run of longest ones in correct, to find r
@@ -181,8 +173,8 @@ def lz78y(bits, symbol_length=1, verbose=True, B=16):
                 rlen = currentlen
     r = 1 + rlen
 
-    vprint(verbose, "    C                    ", C)
-    vprint(verbose, "    r                    ", r)
+    logger.debug("    C                    ", C)
+    logger.debug("    r                    ", r)
 
     #   iteratively find Plocal
     p_local = search_for_p(
@@ -195,16 +187,16 @@ def lz78y(bits, symbol_length=1, verbose=True, B=16):
         verbose=False,
     )
 
-    vprint(verbose, "    p_local              ", p_local)
+    logger.debug("    p_local              ", p_local)
 
     # Step 6
     pu = max(p_prime_global, p_local, 1.0 / (2 ** symbol_length))
     min_entropy_per_symbol = -math.log(pu, 2)
     min_entropy_per_bit = min_entropy_per_symbol / symbol_length
 
-    vprint(verbose, "    pu                   ", pu)
-    vprint(verbose, "    Symbol Min Entropy   ", min_entropy_per_symbol)
-    vprint(verbose, "    Min Entropy per bit  ", min_entropy_per_bit)
+    logger.debug("    pu                   ", pu)
+    logger.debug("    Symbol Min Entropy   ", min_entropy_per_symbol)
+    logger.debug("    Min Entropy per bit  ", min_entropy_per_bit)
 
     return (False, None, min_entropy_per_bit)
 
@@ -217,4 +209,4 @@ if __name__ == "__main__":
         bits = bits + int_to_bits(s, 2)
     (iid_assumption, T, min_entropy) = lz78y(bits, symbol_length=2, B=4)
 
-    vprint(verbose, "min_entropy = ", min_entropy)
+    logger.debug( "min_entropy = ", min_entropy)

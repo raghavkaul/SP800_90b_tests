@@ -1,7 +1,8 @@
 import math
 import operator as op
 from functools import reduce
-from common_functions import *
+
+from .utils import *
 
 # unsigned long long ans = 1,a=1,b=1;
 #        int k = r,i=0;
@@ -68,22 +69,22 @@ def int_to_bits(s, l):
 
 
 def lrs(bits, symbol_length=1, verbose=True, threshold=35):
-    vprint(verbose, "LRS Test")
+    logger.debug("LRS Test")
     bitcount = len(bits)
     L = bitcount // symbol_length
 
-    # vprint(verbose,bits)
-    vprint(verbose, "   Symbol Length        ", symbol_length)
-    vprint(verbose, "   Number of bits       ", (L * symbol_length))
-    vprint(verbose, "   Number of Symbols    ", L)
-    vprint(verbose, "   t-threshold = ", threshold)
+    # logger.debug(bits)
+    logger.debug("   Symbol Length        ", symbol_length)
+    logger.debug("   Number of bits       ", (L * symbol_length))
+    logger.debug("   Number of Symbols    ", L)
+    logger.debug("   t-threshold = ", threshold)
 
     # Split bits into integer symbols
     # Prefix with 0 to start index at 1
     S = [0,] + [
         bits_to_int(bits[symbol_length * i : symbol_length * (i + 1)]) for i in range(L)
     ]
-    # vprint(verbose,symbols)
+    # logger.debug(symbols)
 
     # Steps 1
     # Find-
@@ -93,9 +94,9 @@ def lrs(bits, symbol_length=1, verbose=True, threshold=35):
     for u in range(1, L + 1):  # (max_count == None) or (max_count > threshold):
         max_count = 0
         max_tuple = None
-        vprint(verbose, "   Testing u=", u, end="")
+        logger.debug("   Testing u=", u, end="")
         tuple_position_count = L - u
-        # vprint(verbose,"   Searching through ",tuple_position_count," positions")
+        # logger.debug("   Searching through ",tuple_position_count," positions")
 
         tuple_dict = dict()
         for i in range(1, tuple_position_count + 1):
@@ -109,15 +110,15 @@ def lrs(bits, symbol_length=1, verbose=True, threshold=35):
                 max_count = tuple_dict[the_tuple]
                 max_tuple = the_tuple
         max_count = max(tuple_dict.values())
-        vprint(verbose, "   max tuple count: ", max(tuple_dict.values()))
+        logger.debug("   max tuple count: ", max(tuple_dict.values()))
         # Breakout condition
         if max_count < threshold:
             found_u = u
             break
     max_count = 0
-    vprint(verbose, "    u :", u)
+    logger.debug("    u :", u)
 
-    vprint(verbose, "   DICT SIZE:", len(tuple_dict))
+    logger.debug("   DICT SIZE:", len(tuple_dict))
     # Step 2
     last_max = threshold + 100
     found_v = last_v = None
@@ -125,9 +126,9 @@ def lrs(bits, symbol_length=1, verbose=True, threshold=35):
         last_max = max_count
         max_count = 0
         max_tuple = None
-        vprint(verbose, "   Testing v=", v, end="")
+        logger.debug("   Testing v=", v, end="")
         tuple_position_count = 1 + L - v
-        # vprint(verbose,"   Searching through ",tuple_position_count," positions")
+        # logger.debug("   Searching through ",tuple_position_count," positions")
 
         tuple_dict = dict()
 
@@ -142,19 +143,19 @@ def lrs(bits, symbol_length=1, verbose=True, threshold=35):
                 max_count = tuple_dict[the_tuple]
                 max_tuple = the_tuple
         # max_count = max(tuple_dict.values())
-        vprint(verbose, "   max tuple count: ", max_count)
+        logger.debug("   max tuple count: ", max_count)
 
         # Breakout condition
         if (last_max > 1) and (max_count == 1):
             found_v = last_v
             break
         last_v = v
-    vprint(verbose, "   DICT SIZE:", len(tuple_dict))
+    logger.debug("   DICT SIZE:", len(tuple_dict))
 
     if not found_v:
         raise CannotCompute
     v = found_v
-    vprint(verbose, "    v :", v)
+    logger.debug("    v :", v)
 
     # Step 3
     P = [0.0 for x in range(v + 1)]
@@ -170,7 +171,7 @@ def lrs(bits, symbol_length=1, verbose=True, threshold=35):
             the_tuple = tuple(S[i : i + W])
             if the_tuple in tuple_dict:
                 tuple_dict[the_tuple] += 1
-                # vprint(verbose,ith_unique_W_tuple_count)
+                # logger.debug(ith_unique_W_tuple_count)
                 ith_unique_W_tuple_count[the_tuple] += 1
             else:
                 tuple_dict[the_tuple] = 1
@@ -178,7 +179,7 @@ def lrs(bits, symbol_length=1, verbose=True, threshold=35):
                 ith_unique_W_tuple_count[the_tuple] = 1
 
         C = [ith_unique_W_tuple_count[x] for x in ith_unique_W_tuple]
-        # vprint(verbose,"   C = ",C)
+        # logger.debug("   C = ",C)
         p_max = [0.0 for x in range(W)]
         P[W] = 0.0
         for c in C:
@@ -190,9 +191,9 @@ def lrs(bits, symbol_length=1, verbose=True, threshold=35):
                 P[W] += nCr(c, 2)
         P[W] = P[W] / (nCr(L - W + 1, 2))
         P_max[W] = P[W] ** (1.0 / W)
-    # vprint(verbose,"pmax[u,v]       ",P_max[u:v+1])
+    # logger.debug("pmax[u,v]       ",P_max[u:v+1])
     p_hat = max(P_max[u : v + 1])
-    vprint(verbose, "   p_hat                ", p_hat)
+    logger.debug("   p_hat                ", p_hat)
 
     # Step 4
     pu = min(1.0, p_hat + (2.576 * math.sqrt((p_hat * (1.0 - p_hat) / (L - 1.0)))))
@@ -201,9 +202,9 @@ def lrs(bits, symbol_length=1, verbose=True, threshold=35):
     min_entropy_per_symbol = -math.log(pu, 2)
     min_entropy_per_bit = min_entropy_per_symbol / symbol_length
 
-    vprint(verbose, "   pu                   ", pu)
-    vprint(verbose, "   Symbol Min Entropy   ", min_entropy_per_symbol)
-    vprint(verbose, "   Min Entropy per bit  ", min_entropy_per_bit)
+    logger.debug("   pu                   ", pu)
+    logger.debug("   Symbol Min Entropy   ", min_entropy_per_symbol)
+    logger.debug("   Min Entropy per bit  ", min_entropy_per_bit)
 
     return (False, None, min_entropy_per_bit)
 
@@ -217,7 +218,7 @@ if __name__ == "__main__":
         bits, symbol_length=2, verbose=True, threshold=3
     )
 
-    vprint(verbose, "min_entropy = ", min_entropy)
+    logger.debug( "min_entropy = ", min_entropy)
 
 # goodmegrand.bin 1 bit result from NIST Tool
 
