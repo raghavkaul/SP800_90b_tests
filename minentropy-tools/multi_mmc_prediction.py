@@ -5,29 +5,6 @@ from .utils import *
 precision = 300
 
 
-def bits_to_int(bits):
-    theint = 0
-    for i in range(len(bits)):
-        theint = (theint << 1) + bits[i]
-    return theint
-
-
-def bits_to_int(bits):
-    theint = 0
-    for i in range(len(bits)):
-        theint = theint + (bits[i] << i)
-        # theint = (theint << 1) + bits[i]
-    return theint
-
-
-def int_to_bits(s, l):
-    thebits = list()
-    for i in range(l):
-        thebits.append(s & 0x01)
-        s = s >> 1
-    return thebits
-
-
 def p_local_func(p, r, N):
     q = 1.0 - p
 
@@ -54,7 +31,7 @@ def multi_mmc_prediction(bits, symbol_length=1, verbose=True, D=16):
     #   prepend with 0, so the symbols are indexed from 1
     # logger.debug(bits)
     S = [0,] + [
-        bits_to_int(bits[symbol_length * i : symbol_length * (i + 1)]) for i in range(L)
+        int(bits[symbol_length * i : symbol_length * (i + 1)], 2) for i in range(L)
     ]
     # logger.debug(S)
     # Step 1
@@ -184,16 +161,3 @@ def multi_mmc_prediction(bits, symbol_length=1, verbose=True, D=16):
     logger.debug("    Min Entropy per bit  ", min_entropy_per_bit)
 
     return (False, None, min_entropy_per_bit)
-
-
-if __name__ == "__main__":
-    bits = list()
-    symbols = [2, 1, 3, 2, 1, 3, 1, 3, 1]
-
-    for s in symbols:
-        bits = bits + int_to_bits(s, 2)
-    (iid_assumption, T, min_entropy) = multi_mmc_prediction(
-        bits, verbose=True, symbol_length=2, D=3
-    )
-
-    print("min_entropy = ", min_entropy)

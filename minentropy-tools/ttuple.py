@@ -1,21 +1,7 @@
 import math
 
 from .utils import *
-
-
-def bits_to_int(bits):
-    theint = 0
-    for i in range(len(bits)):
-        theint = (theint << 1) + bits[i]
-    return theint
-
-
-def int_to_bits(s, l):
-    thebits = list()
-    for i in range(l):
-        thebits.append(s & 0x01)
-        s = s >> 1
-    return thebits
+from .errors import CannotCompute
 
 
 def ttuple(bits, symbol_length=1, verbose=True, threshold=35):
@@ -31,7 +17,7 @@ def ttuple(bits, symbol_length=1, verbose=True, threshold=35):
 
     # Split bits into integer symbols
     symbols = [
-        bits_to_int(bits[symbol_length * i : symbol_length * (i + 1)]) for i in range(L)
+        int(bits[symbol_length * i : symbol_length * (i + 1)], 2) for i in range(L)
     ]
     # logger.debug(symbols)
 
@@ -105,13 +91,3 @@ def ttuple(bits, symbol_length=1, verbose=True, threshold=35):
     logger.debug("   Min Entropy per bit  ", min_entropy)
 
     return (False, None, min_entropy)
-
-
-if __name__ == "__main__":
-    bits = list()
-    symbols = [2, 2, 0, 1, 0, 2, 0, 1, 2, 1, 2, 0, 1, 2, 1, 0, 0, 1, 0, 0, 0]
-    for s in symbols:
-        bits = bits + int_to_bits(s, 2)
-    (iid_assumption, T, min_entropy) = ttuple(bits, symbol_length=2, threshold=3)
-
-    logger.debug( "min_entropy = ", min_entropy)

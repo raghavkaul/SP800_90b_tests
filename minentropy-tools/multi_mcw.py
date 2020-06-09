@@ -19,21 +19,6 @@ def bad_nCr(n, r):
     return result
 
 
-def bits_to_int(bits):
-    theint = 0
-    for c, i in enumerate(range(len(bits))):
-        theint = theint + (bits[i] << c)
-    return theint
-
-
-def int_to_bits(s, l):
-    thebits = list()
-    for i in range(l):
-        thebits.append(s & 0x01)
-        s = s >> 1
-    return thebits
-
-
 def pfunc(plocal, r, N):
     q = 1.0 - plocal
 
@@ -62,7 +47,7 @@ def multi_mcw(bits, symbol_length=1, verbose=True, ws=[0, 63, 255, 1023, 4095]):
 
     # Split bits into integer symbols
     symbols = [
-        bits_to_int(bits[symbol_length * i : symbol_length * (i + 1)]) for i in range(L)
+        int(bits[symbol_length * i : symbol_length * (i + 1)], 2) for i in range(L)
     ]
     # logger.debug(symbols)
 
@@ -188,15 +173,3 @@ def multi_mcw(bits, symbol_length=1, verbose=True, ws=[0, 63, 255, 1023, 4095]):
     logger.debug("   Min Entropy per symbol  ", min_entropy)
     logger.debug("   Min Entropy per bit     ", min_entropy_per_bit)
     return (False, None, min_entropy_per_bit)
-
-
-if __name__ == "__main__":
-    bits = list()
-    symbols = [1, 2, 1, 0, 2, 1, 1, 2, 2, 0, 0, 0]
-    for s in symbols:
-        bits = bits + int_to_bits(s, 2)
-    (iid_assumption, T, min_entropy) = multi_mcw(
-        bits, symbol_length=2, ws=[0, 3, 5, 7, 9]
-    )
-
-    logger.debug( "min_entropy = ", min_entropy)

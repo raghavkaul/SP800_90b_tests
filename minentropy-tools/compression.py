@@ -2,13 +2,6 @@ import math
 from .utils import *
 
 
-def bits_to_int(bits):
-    theint = 0
-    for i in range(len(bits)):
-        theint = (theint << 1) + bits[i]
-    return theint
-
-
 def F(z, t, u):
     if u < t:
         return (z ** 2.0) * ((1.0 - z) ** (u - 1.0))
@@ -151,60 +144,3 @@ def compression(bits, symbol_length=1, verbose=True, d=1000):
         min_entropy = 1.0
         logger.debug("   min_entropy = 1.0")
         return (False, None, min_entropy)
-
-
-if __name__ == "__main__":
-    bits = [
-        1,
-        0,
-        0,
-        0,
-        1,
-        1,
-        1,
-        0,
-        0,
-        1,
-        0,
-        1,
-        0,
-        1,
-        0,
-        1,
-        1,
-        1,
-        0,
-        0,
-        1,
-        1,
-        0,
-        0,
-        0,
-        1,
-        1,
-        1,
-        0,
-        0,
-        1,
-        0,
-        1,
-        0,
-        1,
-        0,
-        1,
-        1,
-        1,
-        0,
-        1,
-        1,
-        1,
-        0,
-        0,
-        0,
-        1,
-        1,
-    ]
-
-    (iid_assumption, T, min_entropy) = compression(bits, 1, d=4)
-
-    logger.debug( "min_entropy = ", min_entropy)

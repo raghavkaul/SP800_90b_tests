@@ -105,11 +105,7 @@ parser.add_argument(
     help="Extract test conditions from filename",
 )
 parser.add_argument(
-    "-c",
-    "--csv",
-    action="store_true",
-    default=False,
-    help="Output data in CSV format",
+    "-c", "--csv", action="store_true", default=False, help="Output data in CSV format",
 )
 
 args = parser.parse_args()
@@ -242,9 +238,7 @@ else:
     t_list = list()
     for testname in testlist:
         logger.debug("TEST: %s" % testname)
-        if (testname == "markov" or testname == "collision") and (
-            symbol_length > 1
-        ):
+        if (testname == "markov" or testname == "collision") and (symbol_length > 1):
             logger.debug(
                 verbose,
                 "  Skipping test %s, i:t only runs on 1 bit symbols" % testname,
@@ -312,9 +306,7 @@ else:
         for result in results:
             (summary_name, summary_t, summary_me) = result
             logger.debug(
-                summary_name.ljust(40),
-                str(summary_t).ljust(18),
-                str(summary_me),
+                summary_name.ljust(40), str(summary_t).ljust(18), str(summary_me),
             )
 
         logger.debug("Minimum Min Entropy = ", min_min_entropy)
@@ -331,9 +323,7 @@ else:
         for result in results:
             (summary_name, summary_t, summary_me) = result
             print(
-                summary_name.ljust(40),
-                str(summary_t).ljust(18),
-                str(summary_me),
+                summary_name.ljust(40), str(summary_t).ljust(18), str(summary_me),
             )
         min_min_entropy = holey_min(me_list)
 

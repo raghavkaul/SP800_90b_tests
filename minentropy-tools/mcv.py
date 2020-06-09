@@ -3,13 +3,6 @@ import math
 from .utils import *
 
 
-def bits_to_int(bits):
-    theint = 0
-    for i in range(len(bits)):
-        theint = (theint << 1) + bits[i]
-    return theint
-
-
 def mcv(bits, symbol_length, verbose=True):
     logger.debug("MCV Test")
     bitcount = len(bits)
@@ -30,7 +23,7 @@ def mcv(bits, symbol_length, verbose=True):
     biggest_symbol = 0
     for i in range(L):
         symbol_bits = bits[i * symbol_length : ((i + 1) * symbol_length)]
-        symbol = bits_to_int(symbol_bits)
+        symbol = int(symbol_bits, 2)
         # print (" symbol:",symbol," symbol_bits",symbol_bits)
         # logger.debug(symbol_bits,symbol)
         freq_table[symbol] += 1
@@ -54,51 +47,3 @@ def mcv(bits, symbol_length, verbose=True):
     logger.debug("  Min Entropy per bit  ", min_entropy)
 
     return (False, None, min_entropy)
-
-
-if __name__ == "__main__":
-    bits = [
-        0,
-        0,
-        0,
-        1,
-        0,
-        1,
-        1,
-        0,
-        0,
-        0,
-        0,
-        1,
-        1,
-        0,
-        1,
-        0,
-        0,
-        0,
-        0,
-        1,
-        0,
-        0,
-        0,
-        1,
-        0,
-        1,
-        0,
-        0,
-        1,
-        0,
-        1,
-        0,
-        0,
-        1,
-        0,
-        0,
-        1,
-        0,
-        0,
-        1,
-    ]
-    (iid_assumption, T, min_entropy) = mcv(bits, 2)
-
-    logger.debug( "min_entropy = ", min_entropy)
