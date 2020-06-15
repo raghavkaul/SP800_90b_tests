@@ -1,6 +1,6 @@
 import math
 
-from .utils import *
+from utils import *
 
 precision = 300
 
@@ -12,34 +12,32 @@ def p_local_func(p, r, N):
     x = 1.0
     for i in range(1, 11):
         x = 1.0 + q * (p ** r) * (x ** (r + 1))
-    # logger.debug("     x : ",x)
+    # # logger.debug("     x : ",x)
     result = (1.0 - (p * x)) / ((r + 1.0 - (r * x)) * q)
     result = result / (x ** (N + 1))
     return result
 
 
-def lz78y(bits, symbol_length=1, verbose=True, B=16):
-    logger.debug("LZ78Y Test")
-    bitcount = len(bits)
-    L = bitcount // symbol_length
+def lz78y(S: Data, B=16):
+    # logger.debug("LZ78Y Test")
+    L = len(S)
 
-    # logger.debug(bits)
-    logger.debug("    Symbol Length        ", symbol_length)
-    logger.debug("    Number of bits       ", (L * symbol_length))
-    logger.debug("    Number of Symbols    ", L)
+    # # logger.debug(bits)
+    # logger.debug("    Symbol Length        ", symbol_length)
+    # logger.debug("    Number of bits       ", (L * symbol_length))
+    # logger.debug("    Number of Symbols    ", L)
 
     # Split bits into integer symbols
     #   prepend with 0, so the symbols are indexed from 1
-    # logger.debug(bits)
-    S = [0,] + [
-        int(bits[symbol_length * i : symbol_length * (i + 1)], 2) for i in range(L)
-    ]
-    # logger.debug(S)
+    # # logger.debug(bits)
+    S.insert(0, 0)
+
+    # # logger.debug(S)
     # Step 1
     N = L - B - 1
 
-    logger.debug("    B                    ", B)
-    logger.debug("    N                    ", N)
+    # logger.debug("    B                    ", B)
+    # logger.debug("    N                    ", N)
     correct = [0 for x in range(N + 1)]
     maxDictionarySize = 65536
 
@@ -48,17 +46,16 @@ def lz78y(bits, symbol_length=1, verbose=True, B=16):
     dictionarySize = 0
 
     # Step 3
-    if verbose:
-        logger.debug(
-            "    ",
-            "i".ljust(4),
-            "Add to D".ljust(20),
-            "prev".ljust(14),
-            "Max D[prev]".ljust(16),
-            "prediction".ljust(12),
-            "Si".ljust(4),
-            "Correct_i-b-1",
-        )
+    # logger.debug(
+    #     "    ",
+    #     "i".ljust(4),
+    #     "Add to D".ljust(20),
+    #     "prev".ljust(14),
+    #     "Max D[prev]".ljust(16),
+    #     "prediction".ljust(12),
+    #     "Si".ljust(4),
+    #     "Correct_i-b-1",
+    # )
     for i in range(B + 2, L + 1):
         add_to_d = list()
         prevlist = list()
@@ -88,7 +85,7 @@ def lz78y(bits, symbol_length=1, verbose=True, B=16):
             if prev in D:
                 maxyval = 0
 
-                for cy in range(2 ** symbol_length):
+                for cy in range(4):  # 4 = 2 ** (symbol_length = 2)
                     if cy in D[prev]:
                         if D[prev][cy] >= maxyval:
                             maxyval = D[prev][cy]
@@ -101,9 +98,9 @@ def lz78y(bits, symbol_length=1, verbose=True, B=16):
             correct[i - B - 1] = 1
 
         # print out table line
-        # logger.debug(add_to_d)
-        # logger.debug(prevlist)
-        # logger.debug(maxdlist)
+        # # logger.debug(add_to_d)
+        # # logger.debug(prevlist)
+        # # logger.debug(maxdlist)
         # if verbose:
         #    for pad in range(20):
         #        add_to_d.append("-")
@@ -111,10 +108,10 @@ def lz78y(bits, symbol_length=1, verbose=True, B=16):
         #        maxdlist.append("-")
         #    for line in range(4):
         #        if line == 0:
-        #            logger.debug("    ",str(i).ljust(4),add_to_d[line].ljust(20), prevlist[line].ljust(14), str(maxcount).ljust(16),
+        #            # logger.debug("    ",str(i).ljust(4),add_to_d[line].ljust(20), prevlist[line].ljust(14), str(maxcount).ljust(16),
         #                        str(prediction).ljust(12),str(S[i]).ljust(4), correct[i-B-1])
         #        else:
-        #            logger.debug("    "," ".ljust(4),add_to_d[line].ljust(20), prevlist[line].ljust(14), str(maxcount).ljust(16),
+        #            # logger.debug("    "," ".ljust(4),add_to_d[line].ljust(20), prevlist[line].ljust(14), str(maxcount).ljust(16),
         #                        " ".ljust(12)," ".ljust(4), " ")
     # step 4
     # C = sum(correct)
@@ -123,18 +120,19 @@ def lz78y(bits, symbol_length=1, verbose=True, B=16):
         if i == 1:
             C += 1
 
-    # logger.debug("    correct              ",correct)
+    # # logger.debug("    correct              ",correct)
     p_global = float(C) / float(N)
     if p_global == 0:
         p_prime_global = 1 - (0.001 ** (1.0 / N))
     else:
         p_prime_global = min(
             1.0,
-            p_global + (2.576 * math.sqrt((p_global * (1.0 - p_global)) / (N - 1.0))),
+            p_global
+            + (2.576 * math.sqrt((p_global * (1.0 - p_global)) / (N - 1.0))),
         )
 
-    logger.debug("    p_global             ", p_global)
-    logger.debug("    p_prime_global       ", p_prime_global)
+    # logger.debug("    p_global             ", p_global)
+    # logger.debug("    p_prime_global       ", p_prime_global)
 
     # Step 5
     #  Find run of longest ones in correct, to find r
@@ -150,8 +148,8 @@ def lz78y(bits, symbol_length=1, verbose=True, B=16):
                 rlen = currentlen
     r = 1 + rlen
 
-    logger.debug("    C                    ", C)
-    logger.debug("    r                    ", r)
+    # logger.debug("    C                    ", C)
+    # logger.debug("    r                    ", r)
 
     #   iteratively find Plocal
     p_local = search_for_p(
@@ -164,15 +162,15 @@ def lz78y(bits, symbol_length=1, verbose=True, B=16):
         verbose=False,
     )
 
-    logger.debug("    p_local              ", p_local)
+    # logger.debug("    p_local              ", p_local)
 
     # Step 6
-    pu = max(p_prime_global, p_local, 1.0 / (2 ** symbol_length))
+    pu = max(p_prime_global, p_local, 1.0 / 4)  # 4 = 2 ** (symbolLength=2)
     min_entropy_per_symbol = -math.log(pu, 2)
-    min_entropy_per_bit = min_entropy_per_symbol / symbol_length
+    min_entropy_per_bit = min_entropy_per_symbol
 
-    logger.debug("    pu                   ", pu)
-    logger.debug("    Symbol Min Entropy   ", min_entropy_per_symbol)
-    logger.debug("    Min Entropy per bit  ", min_entropy_per_bit)
+    # logger.debug("    pu                   ", pu)
+    # logger.debug("    Symbol Min Entropy   ", min_entropy_per_symbol)
+    # logger.debug("    Min Entropy per bit  ", min_entropy_per_bit)
 
-    return (False, None, min_entropy_per_bit)
+    return TestResult(False, None, min_entropy_per_bit)

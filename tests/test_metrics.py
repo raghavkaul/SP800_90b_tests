@@ -1,40 +1,39 @@
 from qcore.asserts import assert_eq
-from qcore.testing import disabled
 
 
-@disabled
 def test_ttuple():
-    from ttuple import ttuple
-
+    # NB: This test seems to handle strings as well.
     symbols = [2, 2, 0, 1, 0, 2, 0, 1, 2, 1, 2, 0, 1, 2, 1, 0, 0, 1, 0, 0, 0]
-    bits = [format(s, "2b") for s in symbols]
-    (iid_assumption, T, min_entropy) = ttuple(
-        bits, symbol_length=2, threshold=3
+
+    import ttuple
+
+    assert_eq(
+        0.273, ttuple.ttuple(symbols, threshold=3).min_entropy, tolerance=0.001,
     )
 
-    print("min_entropy = ", min_entropy)
 
-
-@disabled
 def test_multi_mmc_prediction():
     symbols = [2, 1, 3, 2, 1, 3, 1, 3, 1]
-    bits = [format(s, "2b") for s in symbols]
-    (iid_assumption, T, min_entropy) = multi_mmc_prediction(
-        bits, verbose=True, symbol_length=2, D=3
+
+    import multi_mmc_prediction
+
+    assert_eq(
+        0.0755,
+        multi_mmc_prediction.multi_mmc_prediction(symbols, D=3).min_entropy,
+        tolerance=0.0001,
     )
 
-    print("min_entropy = ", min_entropy)
 
-
-@disabled
 def test_multi_mcw():
+    # NB: This test also works on strings
     symbols = [1, 2, 1, 0, 2, 1, 1, 2, 2, 0, 0, 0]
-    bits = [format(s, "2b") for s in symbols]
-    (iid_assumption, T, min_entropy) = multi_mcw(
-        bits, symbol_length=2, ws=[0, 3, 5, 7, 9]
-    )
+    import multi_mcw
 
-    print("min_entropy = ", min_entropy)
+    assert_eq(
+        0.3908,
+        multi_mcw.multi_mcw(symbols, ws=[0, 3, 5, 7, 9]).min_entropy,
+        tolerance=0.0001,
+    )
 
 
 def test_mcv():
@@ -45,98 +44,61 @@ def test_mcv():
     assert_eq(0.5363, mcv(data).min_entropy, tolerance=0.0001)
 
 
-@disabled
 def test_markov():
     # fmt: off
-    bits = [
-        1,
-        0,
-        0,
-        0,
-        1,
-        1,
-        1,
-        0,
-        0,
-        1,
-        0,
-        1,
-        0,
-        1,
-        0,
-        1,
-        1,
-        1,
-        0,
-        0,
-        1,
-        1,
-        0,
-        0,
-        0,
-        1,
-        1,
-        1,
-        0,
-        0,
-        1,
-        0,
-        1,
-        0,
-        1,
-        0,
-        1,
-        1,
-        1,
-        0,
-    ]
+    bits = [1, 0, 0, 0, 1, 1, 1, 0, 0, 1, 0, 1, 0, 1, 0, 1, 1, 1, 0, 0, 1, 1, 0, 0, 0, 1, 1, 1, 0, 0, 1, 0, 1, 0, 1, 0, 1, 1, 1, 0]
     # fmt: on
-    (iid_assumption, T, min_entropy) = markov(bits, 1)
 
-    print("min_entropy = ", min_entropy)
+    import markov
+
+    assert_eq(
+        0.761, markov.markov(bits, 1).min_entropy, tolerance=0.001,
+    )
 
 
-@disabled
 def test_lz78y():
     symbols = [2, 1, 3, 2, 1, 3, 1, 3, 1, 2, 1, 3, 2]
-    bits = [format(s, "2b") for s in symbols]
-    (iid_assumption, T, min_entropy) = lz78y(bits, symbol_length=2, B=4)
 
-    print("min_entropy = ", min_entropy)
+    import lz78y
+
+    assert_eq(0.0191, lz78y.lz78y(symbols, B=4).min_entropy, tolerance=0.0001)
 
 
-@disabled
 def test_lrs():
+    # NB: This test handles strings
     symbols = [2, 2, 0, 1, 0, 2, 0, 1, 2, 1, 2, 0, 1, 2, 1, 0, 0, 1, 0, 0, 0]
-    bits = [format(s, "2b") for s in symbols]
-    (iid_assumption, T, min_entropy) = lrs(
-        bits, symbol_length=2, verbose=True, threshold=3
+
+    import lrs
+
+    assert_eq(
+        0.6146, lrs.lrs(symbols, threshold=3).min_entropy, tolerance=0.0001
     )
 
-    print("min_entropy = ", min_entropy)
 
-
-@disabled
 def test_lag_prediction():
+    # NB: This test handles strings
     symbols = [2, 1, 3, 2, 1, 3, 1, 3, 1, 2]
-    bits = [format(s, "2b") for s in symbols]
-    (iid_assumption, T, min_entropy) = lag_prediction(
-        bits, symbol_length=2, D=3
+
+    import lag_prediction
+
+    assert_eq(
+        0.735,
+        lag_prediction.lag_prediction(symbols, D=3).min_entropy,
+        tolerance=0.001,
     )
 
-    print("min_entropy = ", min_entropy)
 
-
-@disabled
 def test_compression():
-    import compression
-
     # fmt: off
     bits = [1, 0, 0, 0, 1, 1, 1, 0, 0, 1, 0, 1, 0, 1, 0, 1, 1, 1, 0, 0, 1, 1, 0, 0, 0, 1, 1, 1, 0, 0, 1, 0, 1, 0, 1, 0, 1, 1, 1, 0, 1, 1, 1, 0, 0, 0, 1, 1]
     # fmt: on
-    (iid_assumption, T, min_entropy) = compression.compression(bits, 1, d=4)
+    bits = "".join(map(str, bits))
 
-    print("min_entropy = ", min_entropy)
+    import compression
+
+    assert_eq(
+        0.1345, compression.compression(bits, d=4).min_entropy, tolerance=0.0001
+    )
 
 
 def test_collision():

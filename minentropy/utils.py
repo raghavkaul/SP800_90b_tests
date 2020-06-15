@@ -3,9 +3,20 @@ import sys
 
 from math import gamma, e
 
-logger = logging.getLogger()
-logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
+import typing
 
+Data = typing.List[typing.Union[int, float]]
+
+
+class TestResult(typing.NamedTuple):
+    iid_assumption: bool
+    T: typing.Optional[float]  # TODO: Naming?
+    min_entropy: float
+
+
+# TestResult = typing.Tuple[bool, typing.Optional[float], float]
+# logger.= logging.get# logger.)
+logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
 
 # Binary search
 def pfunc(plocal, r, N):
@@ -40,14 +51,16 @@ def search_for_p(
     iteration = 0
     found = False
 
-    # logger.debug("SEARCH FOR P")
-    # logger.debug(f'min {min_plocal}  max {max_plocal} verbose={verbose} r={r} N={N}')
+    # # logger.debug("SEARCH FOR P")
+    # # logger.debug(f'min {min_plocal}  max {max_plocal} verbose={verbose} r={r} N={N}')
     while iteration < iterations:
-        candidate = (min_plocal + max_plocal) / 2.0  # start in the middle of the range
+        candidate = (
+            min_plocal + max_plocal
+        ) / 2.0  # start in the middle of the range
         result = pfunc(candidate, r, N)
         # print ("iteration =",iteration)
         # if verbose:
-        #    logger.debug(f'candidate {candidate}  min {min_plocal}  max {max_plocal}')
+        #    # logger.debug(f'candidate {candidate}  min {min_plocal}  max {max_plocal}')
         iteration += 1
         if iteration > iterations:
             found = False
@@ -159,7 +172,9 @@ def upper_incomplete_gamma(a, x, d=0, iterations=100):
             m = d / 2
             return x + (m - a)
     if d == 0:
-        result = ((x ** a) * (e ** (-x))) / upper_incomplete_gamma(a, x, d=d + 1)
+        result = ((x ** a) * (e ** (-x))) / upper_incomplete_gamma(
+            a, x, d=d + 1
+        )
         return result
     elif (d % 2) == 1:
         m = 1.0 + ((d - 1.0) / 2.0)
@@ -175,11 +190,17 @@ def upper_incomplete_gamma2(a, x, d=0, iterations=100):
     if d == iterations:
         return 1.0
     if d == 0:
-        result = ((x ** a) * (e ** (-x))) / upper_incomplete_gamma2(a, x, d=d + 1)
+        result = ((x ** a) * (e ** (-x))) / upper_incomplete_gamma2(
+            a, x, d=d + 1
+        )
         return result
     else:
         m = (d * 2) - 1
-        return (m - a) + x + ((d * (a - d)) / (upper_incomplete_gamma2(a, x, d=d + 1)))
+        return (
+            (m - a)
+            + x
+            + ((d * (a - d)) / (upper_incomplete_gamma2(a, x, d=d + 1)))
+        )
 
 
 def lower_incomplete_gamma(a, x, d=0, iterations=100):
@@ -190,7 +211,9 @@ def lower_incomplete_gamma(a, x, d=0, iterations=100):
             m = d / 2
             return x + (m - a)
     if d == 0:
-        result = ((x ** a) * (e ** (-x))) / lower_incomplete_gamma(a, x, d=d + 1)
+        result = ((x ** a) * (e ** (-x))) / lower_incomplete_gamma(
+            a, x, d=d + 1
+        )
         return result
     elif (d % 2) == 1:
         m = d - 1

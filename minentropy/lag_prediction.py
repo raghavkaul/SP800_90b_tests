@@ -2,7 +2,7 @@ import math
 import operator as op
 from functools import reduce
 
-from .utils import *
+from utils import *
 
 
 def nCr(n, r):
@@ -35,27 +35,24 @@ def bad_nCr(n, r):
 #    return result
 
 
-def lag_prediction(bits, symbol_length=1, verbose=True, D=128):
-    logger.debug("LAG PREDICTION Test")
-    bitcount = len(bits)
-    L = bitcount // symbol_length
+def lag_prediction(s: Data, verbose=True, D=128):
+    # logger.debug("LAG PREDICTION Test")
+    L = len(s)
 
-    # logger.debug(bits)
-    logger.debug("   Symbol Length           ", symbol_length)
-    logger.debug("   Number of bits          ", (L * symbol_length))
-    logger.debug("   Number of Symbols       ", L)
+    # # logger.debug(bits)
+    # logger.debug(f"   Symbol Length           {symbol_length}")
+    # logger.debug(f"   Number of bits          {L * symbol_length}")
+    # logger.debug(f"   Number of Symbols       {L}")
 
     # Split bits into integer symbols
     # Prefix with 0 to start index at 1.
-    s = [0,] + [
-        int(bits[symbol_length * i : symbol_length * (i + 1)], 2) for i in range(L)
-    ]
-    # logger.debug(symbols)
+    s.insert(0, 0)
+    # # logger.debug(symbols)
 
     # Steps 1
     # w = ws # Window Sizes
     N = L - 1
-    logger.debug("   N                       ", N)
+    # logger.debug(f"   N                       {N}")
     lag = [None for i in range(D + 1)]  # add to to base from 1.
     correct = [0 for i in range(N + 1)]
 
@@ -94,11 +91,12 @@ def lag_prediction(bits, symbol_length=1, verbose=True, D=128):
     else:
         P_prime_global = min(
             1.0,
-            P_global + (2.576 * math.sqrt((P_global * (1.0 - P_global) / (N - 1.0)))),
+            P_global
+            + (2.576 * math.sqrt((P_global * (1.0 - P_global) / (N - 1.0)))),
         )
 
-    logger.debug("   P_global                ", P_global)
-    logger.debug("   P_prime_global          ", P_prime_global)
+    # logger.debug(f"   P_global                {P_global}")
+    # logger.debug(f"   P_prime_global          {P_prime_global}")
 
     # Step 6
 
@@ -115,8 +113,8 @@ def lag_prediction(bits, symbol_length=1, verbose=True, D=128):
             max_runlength = runlength
 
     r = max_runlength + 1
-    logger.debug("    C                    ", C)
-    logger.debug("    r                    ", r)
+    # logger.debug("    C                    ", C)
+    # logger.debug("    r                    ", r)
 
     # solve_for_p(mu_bar=0.99, n=N, v=r, tolerance=1e-09)
     P_local = search_for_p(r, N, verbose=verbose)
@@ -135,7 +133,9 @@ def lag_prediction(bits, symbol_length=1, verbose=True, D=128):
             if iteration > iterations:
                 found = False
                 break
-            elif (result > (0.99 - 0.00000001)) and (result < (0.99 + 0.00000001)):
+            elif (result > (0.99 - 0.00000001)) and (
+                result < (0.99 + 0.00000001)
+            ):
                 found = True
                 P_local = candidate
                 break
@@ -147,11 +147,11 @@ def lag_prediction(bits, symbol_length=1, verbose=True, D=128):
         if found == False:
             print("Warning: P_local not found")
 
-    logger.debug("   P_local                 ", P_local)
-    k = 2.0 ** symbol_length
+    # logger.debug("   P_local                 ", P_local)
+    k = 4  # = 2 ** symbol_length
     min_entropy = -math.log(max(P_prime_global, P_local, 1.0 / k), 2)
-    min_entropy_per_bit = min_entropy / symbol_length
+    min_entropy_per_bit = min_entropy  # /symbol_length
 
-    logger.debug("   Min Entropy per symbol  ", min_entropy)
-    logger.debug("   Min Entropy per bit     ", min_entropy_per_bit)
-    return (False, None, min_entropy_per_bit)
+    # logger.debug("   Min Entropy per symbol  ", min_entropy)
+    # logger.debug("   Min Entropy per bit     ", min_entropy_per_bit)
+    return TestResult(False, None, min_entropy_per_bit)

@@ -1,23 +1,25 @@
 import math
+
 from mpmath import *
 
-from .utils import *
+from utils import *
 
 precision = 300
 
 
-def markov(bits, symbol_length, verbose=True):
-    logger.debug("MARKOV Test")
+def markov(bits, symbol_length) -> TestResult:
+    # logger.debug("MARKOV Test")
     L = len(bits)
 
     if symbol_length != 1:
-        logger.debug(
-            "   Warning, Markov test only defined for 1 bit symbols. Setting symbol length to 1",
-        )
+        # logger.debug(
+        #    "   Warning, Markov test only defined for 1 bit symbols. Setting symbol length to 1",
+        # )
+        pass
 
-    # logger.debug(bits)
-    logger.debug("  Symbol Length         1")
-    logger.debug("  Number of bits       ", L)
+    # # logger.debug(bits)
+    # logger.debug("  Symbol Length         1")
+    # logger.debug("  Number of bits       ", L)
 
     # step 1
     count0 = 0
@@ -48,11 +50,11 @@ def markov(bits, symbol_length, verbose=True):
     P10 = mpf(C10 / (C10 + C11))
     P11 = mpf(C11 / (C10 + C11))
 
-    logger.debug("   ", P00, P01)
-    logger.debug("   ", P10, P11)
+    # logger.debug("   ", P00, P01)
+    # logger.debug("   ", P10, P11)
     # Step 3
 
-    p_seq = [0.0 for x in range(6)]
+    p_seq = [0.0] * 6
     p_seq[0] = P0 * (P00 ** 127)
     p_seq[1] = P0 * power(P01, 64) * power(P10, 63)
     p_seq[2] = P0 * P01 * (power(P11, 126))
@@ -60,8 +62,6 @@ def markov(bits, symbol_length, verbose=True):
     p_seq[4] = P1 * power(P10, 64) * power(P01, 63)
     p_seq[5] = P1 * power(P11, 127)
 
-    for (i, p) in enumerate(p_seq):
-        logger.debug("    ", i, p)
     # Step 4
 
     p_max = max(p_seq)
@@ -69,5 +69,5 @@ def markov(bits, symbol_length, verbose=True):
     if min_entropy > 1.0:
         min_entropy = 1.0
 
-    logger.debug("  Min Entropy per bit  ", min_entropy)
-    return (False, None, min_entropy)
+    # logger.debug("  Min Entropy per bit  ", min_entropy)
+    return TestResult(False, None, min_entropy)

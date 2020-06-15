@@ -2,7 +2,7 @@ import math
 import operator as op
 from functools import reduce
 
-from .utils import *
+from utils import *
 
 
 def nCr(n, r):
@@ -35,26 +35,24 @@ def pfunc(plocal, r, N):
     return result
 
 
-def multi_mcw(bits, symbol_length=1, verbose=True, ws=[0, 63, 255, 1023, 4095]):
-    logger.debug("MULTI MCW Test")
-    bitcount = len(bits)
-    L = bitcount // symbol_length
+def multi_mcw(
+    symbols: Data, verbose=True, ws=[0, 63, 255, 1023, 4095]
+) -> TestResult:
+    # logger.debug("MULTI MCW Test")
+    L = len(symbols)
 
-    # logger.debug(bits)
-    logger.debug("   Symbol Length           ", symbol_length)
-    logger.debug("   Number of bits          ", (L * symbol_length))
-    logger.debug("   Number of Symbols       ", L)
+    # # logger.debug(bits)
+    # logger.debug("   Symbol Length           ", symbol_length)
+    # logger.debug("   Number of bits          ", (L * symbol_length))
+    # logger.debug("   Number of Symbols       ", L)
 
     # Split bits into integer symbols
-    symbols = [
-        int(bits[symbol_length * i : symbol_length * (i + 1)], 2) for i in range(L)
-    ]
-    # logger.debug(symbols)
+    # # logger.debug(symbols)
 
     # Steps 1
     w = ws  # Window Sizes
     N = L - w[1]
-    logger.debug("   N                       ", N)
+    # logger.debug("   N                       ", N)
     correct = [0 for i in range(N + 1)]
 
     # Step 2
@@ -66,7 +64,7 @@ def multi_mcw(bits, symbol_length=1, verbose=True, ws=[0, 63, 255, 1023, 4095]):
     # Step 3
     symbols = [0,] + symbols
     # for i in range(w[1]+1,L+1):
-    # logger.debug("   i     frequent                    scoreboard3b    winner  prediction   si      correct[i-w[1]] scoreboard3d")
+    # # logger.debug("   i     frequent                    scoreboard3b    winner  prediction   si      correct[i-w[1]] scoreboard3d")
     for i in range(w[1] + 1, L + 1):
         for j in [1, 2, 3, 4]:
             if i > w[j]:
@@ -85,27 +83,27 @@ def multi_mcw(bits, symbol_length=1, verbose=True, ws=[0, 63, 255, 1023, 4095]):
                         t = tiebreaker
                         tiebreaker += 1
                         counts[s] = (1, t)
-                # logger.debug("Counts : ",counts)
+                # # logger.debug("Counts : ",counts)
                 # find max frequency
                 themax = 0
                 for s in counts:
                     (c, t) = counts[s]
                     if c > themax:
                         themax = c
-                # logger.debug("MAX COUNT:",themax)
+                # # logger.debug("MAX COUNT:",themax)
                 # use the tiebreaker
                 themax_tiebreaker = 0
                 for s in counts:
                     (c, t) = counts[s]
                     if c == themax:
-                        # logger.debug("IF ",t,">",themax_tiebreaker, "answer=",(t > themax_tiebreaker))
+                        # # logger.debug("IF ",t,">",themax_tiebreaker, "answer=",(t > themax_tiebreaker))
                         if t > themax_tiebreaker:
-                            # logger.debug("  T > THEMAX_TIEBREAKER  t:",t,"   tmt:",themax_tiebreaker)
+                            # # logger.debug("  T > THEMAX_TIEBREAKER  t:",t,"   tmt:",themax_tiebreaker)
                             themax_tiebreaker = t
                             most_frequent_symbol = s
-                            # logger.debug("  NOW T = THEMAX_TIEBREAKER  t:",t,"  tmt:",themax_tiebreaker)
+                            # # logger.debug("  NOW T = THEMAX_TIEBREAKER  t:",t,"  tmt:",themax_tiebreaker)
 
-                    # logger.debug(" TIEBREAKER: s=",s,"  count = ",c,"  t=",t," max_tieb:",themax_tiebreaker," most_freq_s:",most_frequent_symbol)
+                    # # logger.debug(" TIEBREAKER: s=",s,"  count = ",c,"  t=",t," max_tieb:",themax_tiebreaker," most_freq_s:",most_frequent_symbol)
                 # set frequent[j] to the most frequent and recent symbol
                 frequent[j] = most_frequent_symbol
             else:
@@ -122,10 +120,10 @@ def multi_mcw(bits, symbol_length=1, verbose=True, ws=[0, 63, 255, 1023, 4095]):
                     winner = j
 
         # scoreboard3d = scoreboard[:]
-        # logger.debug("  ",str(i).ljust(5),str(frequent[1:]).ljust(27),str(scoreboard3b[1:]).ljust(15),
+        # # logger.debug("  ",str(i).ljust(5),str(frequent[1:]).ljust(27),str(scoreboard3b[1:]).ljust(15),
         #      str(winner).ljust(7),str(prediction).ljust(12),str(symbols[i]).ljust(7),
         #      str(correct[i-w[1]]).ljust(15),str(scoreboard3d[1:]).ljust(12),)
-    # logger.debug("   Correct                 ",correct)
+    # # logger.debug("   Correct                 ",correct)
     # Step 4
     C = 0
     for i in correct:
@@ -139,11 +137,12 @@ def multi_mcw(bits, symbol_length=1, verbose=True, ws=[0, 63, 255, 1023, 4095]):
     else:
         P_prime_global = min(
             1.0,
-            P_global + (2.576 * math.sqrt((P_global * (1.0 - P_global) / (N - 1.0)))),
+            P_global
+            + (2.576 * math.sqrt((P_global * (1.0 - P_global) / (N - 1.0)))),
         )
 
-    logger.debug("   P_global                ", P_global)
-    logger.debug("   P_prime_global          ", P_prime_global)
+    # logger.debug("   P_global                ", P_global)
+    # logger.debug("   P_prime_global          ", P_prime_global)
     # Step 6
 
     # find longest run of ones in correct[]
@@ -159,17 +158,17 @@ def multi_mcw(bits, symbol_length=1, verbose=True, ws=[0, 63, 255, 1023, 4095]):
             max_runlength = runlength
     r = max_runlength + 1
 
-    logger.debug("    C                    ", C)
-    logger.debug("    r                    ", r)
+    # logger.debug("    C                    ", C)
+    # logger.debug("    r                    ", r)
 
     # Binary chop search for Plocal
     P_local = search_for_p(r, N, verbose=verbose)
 
-    logger.debug("   P_local                 ", P_local)
-    k = 2.0 ** symbol_length
+    # logger.debug("   P_local                 ", P_local)
+    k = 4  # 2 ** (symbol_length = 2)
     min_entropy = -math.log(max(P_prime_global, P_local, 1.0 / k), 2)
-    min_entropy_per_bit = min_entropy / symbol_length
+    min_entropy_per_bit = min_entropy
 
-    logger.debug("   Min Entropy per symbol  ", min_entropy)
-    logger.debug("   Min Entropy per bit     ", min_entropy_per_bit)
-    return (False, None, min_entropy_per_bit)
+    # logger.debug("   Min Entropy per symbol  ", min_entropy)
+    # logger.debug("   Min Entropy per bit     ", min_entropy_per_bit)
+    return TestResult(False, None, min_entropy_per_bit)

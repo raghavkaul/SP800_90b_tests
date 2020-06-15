@@ -1,5 +1,8 @@
 import math
-from .utils import *
+
+from utils import *
+
+from errors import *
 
 
 def F(z, t, u):
@@ -15,49 +18,53 @@ def F(z, t, u):
 def G(z, v, d, L):
     g_sum = 0.0
     st = [
-        math.log(u, 2.0) * ((1.0 - z) ** (u - 1.0)) for u in range((d + 1), v + d + 1)
+        math.log(u, 2.0) * ((1.0 - z) ** (u - 1.0))
+        for u in range((d + 1), v + d + 1)
     ]
     g_sum = (
         v
         * z
         * z
-        * sum([math.log(u, 2.0) * ((1.0 - z) ** (u - 1.0)) for u in range(1, (d + 1))])
+        * sum(
+            [
+                math.log(u, 2.0) * ((1.0 - z) ** (u - 1.0))
+                for u in range(1, (d + 1))
+            ]
+        )
     )
     g_sum += z * z * sum([(v - t - 1) * st[t] for t in range(v - 1)])
     g_sum += z * sum(st)
     return g_sum / v
 
 
-def compression(bits, symbol_length=1, verbose=True, d=1000):
-    logger.debug("COMPRESSION Test")
-    L = len(bits)
+from typing import List
 
-    if symbol_length != 1:
-        logger.debug(
-            verbose,
-            "   Warning, Compression test treats data at 1 bit symbols. Setting symbol length to 1",
-        )
+
+def compression(bits: str, d=1000):
+    # logger.debug("COMPRESSION Test")
+    L = len(bits)
 
     if L < d:
         raise CannotCompute
 
-    # logger.debug(bits)
-    logger.debug("   Symbol Length        1")
-    logger.debug("   Number of bits      ", L)
+    # # logger.debug(bits)
+    # logger.debug("   Symbol Length        1")
+    # logger.debug("   Number of bits      ", L)
 
     # step 1
     b = 6
     blocks = L // b
+
     s_prime = [0,] + [int(bits[b * i : b * (i + 1)], 2) for i in range(blocks)]
 
-    logger.debug("   Number of blocks    ", blocks)
+    # logger.debug("   Number of blocks    ", blocks)
 
     # Step 2
     dict_data = s_prime[1 : d + 1]
     v = blocks - d
     test_data = s_prime[d + 1 :]
 
-    logger.debug("   v                   ", v)
+    # logger.debug("   v                   ", v)
 
     # Step 3
     dictionary = [
@@ -70,8 +77,8 @@ def compression(bits, symbol_length=1, verbose=True, d=1000):
     # Step 4
     D = [0,] + [0 for i in range(v)]
     for i in range(d + 1, blocks + 1):
-        # logger.debug("  i = ",i,end="")
-        # logger.debug("  s_prime[%d]=" % i,s_prime[i])
+        # # logger.debug("  i = ",i,end="")
+        # # logger.debug("  s_prime[%d]=" % i,s_prime[i])
         if dictionary[s_prime[i]] != 0:
             # print ("D[i-d] = D[%d - %d] = D[%d]" % (i,d,i-d))
             D[i - d] = i - dictionary[s_prime[i]]
@@ -84,11 +91,11 @@ def compression(bits, symbol_length=1, verbose=True, d=1000):
 
     x_sum = 0.0
     for i in range(1, v + 1):
-        # logger.debug("   D[",i,"] = ",D[i], "log2(D[i])=",math.log(D[i],2))
+        # # logger.debug("   D[",i,"] = ",D[i], "log2(D[i])=",math.log(D[i],2))
         x_sum += math.log(D[i], 2)
     x_bar = x_sum / v
 
-    logger.debug("   x_bar               ", x_bar)
+    # logger.debug("   x_bar               ", x_bar)
 
     c = 0.5907
 
@@ -99,12 +106,12 @@ def compression(bits, symbol_length=1, verbose=True, d=1000):
     s_sum = s_sum - (x_bar ** 2)
     sigma_hat = c * math.sqrt(s_sum)
 
-    logger.debug("   sigma_hat           ", sigma_hat)
+    # logger.debug("   sigma_hat           ", sigma_hat)
 
     # Step 6
 
     x_bar_prime = x_bar - ((2.576 * sigma_hat) / math.sqrt(v))
-    logger.debug("   x_bar_prime         ", x_bar_prime)
+    # logger.debug("   x_bar_prime         ", x_bar_prime)
 
     # Step 7
 
@@ -112,8 +119,8 @@ def compression(bits, symbol_length=1, verbose=True, d=1000):
     p_max = 1.0
     p_mid = (p_min + p_max) / 2.0
 
-    logger.debug("   p_min               ", p_min)
-    logger.debug("   p_max               ", p_max)
+    # logger.debug("   p_min               ", p_min)
+    # logger.debug("   p_max               ", p_max)
     iterations = 1000
     iteration = 0
 
@@ -138,9 +145,9 @@ def compression(bits, symbol_length=1, verbose=True, d=1000):
     # Step 8
     if found:
         min_entropy = -math.log(p_mid, 2) / b
-        logger.debug("   min_entropy =", min_entropy)
-        return (False, None, min_entropy)
+        # logger.debug("   min_entropy =", min_entropy)
+        return TestResult(False, None, min_entropy)
     else:
         min_entropy = 1.0
-        logger.debug("   min_entropy = 1.0")
-        return (False, None, min_entropy)
+        # logger.debug("   min_entropy = 1.0")
+        return TestResult(False, None, min_entropy)
