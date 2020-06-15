@@ -1,6 +1,9 @@
 import math
+from typing import List, Tuple
 
-from .utils import *
+import numpy as np
+
+from utils import *
 
 
 def pq_func(p):
@@ -8,7 +11,8 @@ def pq_func(p):
 
     z = 1.0 / q
 
-    fq = upper_incomplete_gamma(3, z) * (z ** (-3.0)) * (e ** (z))
+    print(p, q, e, z)
+    fq = upper_incomplete_gamma(3, z) * (z ** (-3.0)) * (e ** z)
 
     result = (p * (q ** -2.0)) * (1.0 + (0.5 * ((1 / p) - (1 / q)))) * fq
     result = result - ((p * (q ** -1.0)) * 0.5 * ((1 / p) - (1 / q)))
@@ -16,60 +20,45 @@ def pq_func(p):
     return result
 
 
-def collision(bits, symbol_length=1, verbose=True):
-    logger.debug("Collision Test")
-    if symbol_length > 1:
-        logger.debug(
-            verbose, "Warning: Collision test is only to be run with symbol length of 1"
-        )
+def _runs_between_collisions(data: Data) -> List[Tuple[int, int]]:
+    i = 0
+    runs_between_collisions = []
+    while i < len(data):
+        j = i + 1
 
-    t = list()
+        seen = {data[i]}
 
-    # Step 1
-    v = 0
+        while j < len(data):
+            if data[j] in seen:
+                runs_between_collisions.append((i, j))
+                # runs_between_collisions.append((seen[data[j]], j))
+                break
 
-    # Step 2
-    index = 1
-    found = False
-    while True:
-        j = index
-        if bits[index - 1] == bits[index]:
-            found = True
-            j = index + 1
-            # logger.debug("  ",bits[index-1:j])
-        elif j > (len(bits) - 2):
-            found = False
-            break
-        else:
-            found = True
-            j = index + 2
-            # logger.debug("  ",bits[index-1:j])
+            seen.add(data[j])
+            # seen[data[j]] = j
 
-        # Step 3
-        if found == True:
-            v = v + 1
-            t.append(j - index + 1)
-            index = j + 1
+            j += 1
 
-        # Step 4
-        if index > (len(bits) - 2):
-            break
+        i = j + 1
 
-    # logger.debug("   T = ",t)
-    # Step 5
-    t_sum = 0.0
-    sq_sum = 0.0
-    t_sum = sum(t)
-    x_bar = t_sum / v
-    logger.debug("   x_bar         ", x_bar)
+    return runs_between_collisions
 
-    for ti in t:
-        sq_sum += (ti - x_bar) ** 2
-    sigma_hat = math.sqrt((1.0 / (v - 1)) * sq_sum)
-    logger.debug("   sigma_hat     ", sigma_hat)
-    # Step 6
-    x_bar_prime = x_bar - 2.576 * (sigma_hat / math.sqrt(v))
-    logger.debug("   x_bar_prime   ", x_bar_prime)
+
+def collision(data: Data) -> TestResult:
+    # FIXME: Non-standard results if data is non-binary
+
+    runs = _runs_between_collisions(data)
+
+    run_lengths = [run[1] - run[0] + 1 for run in runs]
+    rl_avg = np.mean(run_lengths)
+    rl_stdev = np.std(
+        run_lengths, ddof=1
+    )  # Any entropy-measurable source is necessarily "sampled," hence ddof=1.
+    rl_avg_lowerbound = rl_avg - (
+        2.576 * (rl_stdev / np.sqrt(len(run_lengths)))
+    )
+
+    print(rl_avg, rl_stdev, rl_avg_lowerbound)
 
     # Step 7
     iterations = 1000
@@ -80,20 +69,17 @@ def collision(bits, symbol_length=1, verbose=True):
     p_max = 1.0
 
     found = False
-    while not (found):
+    while not found:
         candidate = pq_func(p_mid)
-        if candidate > x_bar_prime:
+        if candidate > rl_avg_lowerbound:
             p_min = p_mid
             p_mid = (p_min + p_max) / 2.0
-            # logger.debug("   G Last =",last_p_mid," Pmid =",p_mid, " Candidate = ",candidate," tgt = ",x_bar_prime)
-        elif candidate < x_bar_prime:
+        elif candidate < rl_avg_lowerbound:
             p_max = p_mid
             p_mid = (p_min + p_max) / 2.0
-            # logger.debug("   L Last =",last_p_mid," Pmid =",p_mid, " Candidate = ",candidate," tgt = ",x_bar_prime)
-        elif (candidate == x_bar_prime) or (p_mid == last_p_mid):
+        elif (candidate == rl_avg_lowerbound) or (p_mid == last_p_mid):
             found = True
             p = p_mid
-            # logger.debug("   M Last =",last_p_mid," Pmid =",p_mid, " Candidate = ",candidate," tgt = ",x_bar_prime)
             break
         last_p_mid = p_mid
 
@@ -106,12 +92,12 @@ def collision(bits, symbol_length=1, verbose=True):
     if found:
         if p < 0.5:
             p = 1.0 - p
-        logger.debug("   p =", p)
+        print("   p =", p)
         min_entropy = -math.log(p, 2.0)
-        logger.debug("   min_entropy =", min_entropy)
+        print("   min_entropy =", min_entropy)
     else:
-        logger.debug("   p = 0.5")
+        print("   p = 0.5")
         min_entropy = 1.0
-        logger.debug("   min_entropy = 1.0")
+        print("   min_entropy = 1.0")
 
-    return (False, None, min_entropy)
+    return TestResult(False, None, min_entropy)

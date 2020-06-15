@@ -1,49 +1,32 @@
 import math
 
-from .utils import *
+from collections import Counter
+from utils import *
 
 
-def mcv(bits, symbol_length, verbose=True):
-    logger.debug("MCV Test")
-    bitcount = len(bits)
-    L = bitcount // symbol_length
+def mcv(data: Data) -> TestResult:
+    """
+    Returns min-entropy estimate from mcv test.
 
-    # logger.debug(bits)
-    logger.debug("  Symbol Length        ", symbol_length)
-    logger.debug("  Number of bits       ", (L * symbol_length))
-    logger.debug("  Number of Symbols    ", L)
-    # Make Frequency Table
-    freq_table = list()
-    for i in range(2 ** symbol_length):
-        freq_table.append(0)
+    :param data to calculate estimate for
 
-    # Build the frequency table
-    # Keep track of the most frequent symbol
-    biggest = 0
-    biggest_symbol = 0
-    for i in range(L):
-        symbol_bits = bits[i * symbol_length : ((i + 1) * symbol_length)]
-        symbol = int(symbol_bits, 2)
-        # print (" symbol:",symbol," symbol_bits",symbol_bits)
-        # logger.debug(symbol_bits,symbol)
-        freq_table[symbol] += 1
-        if freq_table[symbol] > biggest:
-            biggest = freq_table[symbol]
-            biggest_symbol = symbol
+    From standards doc (p. 41):
+    This method first finds the proportion of the most common value in the
+    input dataset, and then constructs a confidence interval for this
+    proportion. The upper bound of the confidence interval is used to estimate
+    the min-entropy per sample of the source.
 
-    logger.debug("  Most common symbol   ", biggest_symbol)
+    """
+    L = len(data)
 
-    # do the SP800-90b section 6.3.1 sums
-    p_hat = biggest / L
-    logger.debug("  p_hat                ", p_hat)
+    # 1. Find the proportion of the most-common value (p-hat) in the dataset
+    most_common_val, mcv_count = Counter(data).most_common(1).pop()
+    p_hat = mcv_count / L
 
-    pu = p_hat + (2.576 * (math.sqrt((p_hat * (1.0 - p_hat)) / (L - 1.0))))
-    if pu > 1.0:
-        pu = 1.0
-    min_entropy_per_symbol = -math.log(pu, 2.0)
-    min_entropy = (-math.log(pu, 2.0)) / symbol_length
-    logger.debug("  pu                   ", pu)
-    logger.debug("  Symbol Min Entropy   ", min_entropy_per_symbol)
-    logger.debug("  Min Entropy per bit  ", min_entropy)
+    # 2. Calculate an upper bound on the probability (p-sub-u) of the most common value
+    p_u = p_hat + (2.576 * math.sqrt((p_hat * (1 - p_hat)) / (L - 1)))
+    p_u = min(1.0, p_u)
 
-    return (False, None, min_entropy)
+    # 3. The estimated min-entropy is -log2(p-sub-u)
+    min_entropy = -math.log2(p_u)
+    return TestResult(False, None, min_entropy)
