@@ -2,21 +2,31 @@ import logging
 import sys
 
 from math import gamma, e
+from typing import NamedTuple, Optional
 
-import typing
+from encoders import Sequence
 
-Data = typing.List[typing.Union[int, float]]
+__all__ = [
+    "TestResult",
+    "NonIIDMinEntropyTest",
+]
 
 
-class TestResult(typing.NamedTuple):
+class TestResult(NamedTuple):
     iid_assumption: bool
-    T: typing.Optional[float]  # TODO: Naming?
+    T: Optional[float]  # TODO: Naming?
     min_entropy: float
+
+
+class NonIIDMinEntropyTest:
+    def run(self, data: Sequence) -> TestResult:
+        raise NotImplementedError
 
 
 # TestResult = typing.Tuple[bool, typing.Optional[float], float]
 # logger.= logging.get# logger.)
 logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
+
 
 # Binary search
 def pfunc(plocal, r, N):
