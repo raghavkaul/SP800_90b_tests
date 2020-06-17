@@ -1,4 +1,5 @@
 import logging
+import math
 import sys
 from math import gamma, e
 from numbers import Integral, Number
@@ -16,13 +17,14 @@ __all__ = [
     "TestResult",
     "NonIIDMinEntropyTest",
     # Mathematical functions
+    "upper_probability_bound",
     "upper_incomplete_gamma",
     "search_for_p",
 ]
 
 
 # TODO: Match np.array as well, e.g. with Intersection[Collection, Iterable, Protocol]
-DataSequence = Sequence[Integral]
+DataSequence = Sequence[Integral]  # Integral captures `np.uint`s
 _EntropicSymbol = Union[Number, str]
 SymbolSequence = Sequence[_EntropicSymbol]
 
@@ -41,6 +43,12 @@ class NonIIDMinEntropyTest:
 # TestResult = typing.Tuple[bool, typing.Optional[float], float]
 # logger.= logging.get# logger.)
 logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
+
+
+def upper_probability_bound(sample_mean: float, sample_sz: int) -> float:
+    return sample_mean + (
+        2.576 * math.sqrt((sample_mean * (1 - sample_mean) / (sample_sz - 1)))
+    )
 
 
 # Binary search
@@ -64,13 +72,7 @@ def pfunc(plocal, r, N):
 
 
 def search_for_p(
-    r,
-    N,
-    iterations=1000,
-    min_plocal=0.0,
-    max_plocal=1.0,
-    tolerance=0.00000001,
-    verbose=False,
+    r, N, iterations=1000, min_plocal=0.0, max_plocal=1.0, tolerance=0.00000001,
 ):
     # Binary chop search for Plocal
     iteration = 0
@@ -99,7 +101,7 @@ def search_for_p(
         else:
             max_plocal = candidate
 
-    if found == False:
+    if not found:
         print("Warning: P_local not found")
 
     return P_local
