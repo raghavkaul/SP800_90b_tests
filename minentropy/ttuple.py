@@ -1,77 +1,43 @@
+import logging
 import math
+from collections import Counter
 
 from utils import *
 from errors import CannotCompute
 
 
-def ttuple(symbols: DataSequence, threshold=35) -> TestResult:
+def ttuple(symbols: SymbolSequence, threshold=35) -> TestResult:
     L = len(symbols)
 
-    # # logger.debug(bits)
-    # logger.debug(f"   Symbol Length       {symbol_length}")
-    # logger.debug(f"   Number of bits       {(L * symbol_length)}")
-    # logger.debug(f"   Number of Symbols    {L}")
-    # logger.debug(f"   t-threshold = {threshold}")
+    # Step 1: Find the largest t such that the number of t-tuples of symbols
+    # is >= `threshold`
+    t = None
+    p_max = -math.inf
 
-    # Steps 1 and 2
-    # Find-t
-    # The t-tuple length for which the count is at least 35
-    tuple_dict = dict()
-    Q = [0 for x in range(1024)]  # Large enough to always be big enough
-    P = [0 for x in range(1024)]  # Large enough to always be big enough
-    P_max_array = [
-        0 for x in range(1024)
-    ]  # Large enough to always be big enough
-    last_five_maxes = [
-        threshold + 100 for i in range(5)
-    ]  # Keep track of the last 10. If they were all one,
-    # end to loop to save compute time.
-    for t in range(
-        1, min(L + 1, 128)
-    ):  # (max_count == None) or (max_count > threshold):
-        max_count = 0
-        # logger.debug(f"   Testing t={t}")
-        tuple_position_count = 1 + L - t
-        # # logger.debug("   Searching through ",tuple_position_count," positions")
+    for i in range(1, L):
+        # Step 2: Let Q[i] := occurrences of most common i-tuple for i in [1, t]
+        most_frequent_i_tupl, Q_i = (
+            Counter([tuple(symbols[ndx : ndx + i]) for ndx in range(L - i + 1)])
+            .most_common(1)
+            .pop()
+        )
 
-        for i in range(tuple_position_count):
-            the_tuple = tuple(symbols[i : i + t])
-            if the_tuple in tuple_dict:
-                tuple_dict[the_tuple] += 1
-            else:
-                tuple_dict[the_tuple] = 1
+        # logging.debug(
+        #     f"Most common {i}-tuple ({Q_i} occurrences): {most_frequent_i_tupl}"
+        # )
 
-            if tuple_dict[the_tuple] > max_count:
-                max_count = tuple_dict[the_tuple]
-                max_tuple = the_tuple
-            # print ("   Found ",the_tuple," at location ",i," count = ",tuple_dict[the_tuple])
-        Q[t] = max_count
-        last_five_maxes = last_five_maxes[1:]
-        last_five_maxes.append(max_count)
-        # logger.debug(f"   max tuple count: {max_count}")
-        if (max(last_five_maxes) == 1) or (
-            max(last_five_maxes) < (threshold - 10)
-        ):
-            break
-        # # logger.debug("   Q[t] = ",max_count, "  Q[i]=",Q[1:t+1])
+        if Q_i >= threshold:
+            t = i
+            # Step 3: Estimate maximum individual t-tuple probability
+            # This is a "sample" probability (because we never get the full source
+            # of any entropy data).
+            P_i = (Q_i / (L - i + 1)) ** (1 / i)
+            p_max = max(p_max, P_i)
 
-    found = False
-    for pos, qt in reversed(list(enumerate(Q[: L + 1]))):
-        # # logger.debug("   pos=",pos, "  qt=",qt)
-        if qt >= threshold:
-            found = True
-            t = pos
-            break
+    if t is None:
+        raise CannotCompute(f"Couldn't find t-tuple for threshold={threshold}")
 
-    if not found:
-        raise CannotCompute("No t found.")
-
-    # Step 2
-    for i in range(1, t + 1):
-        P[i] = Q[i] / (L - i + 1.0)
-        P_max_array[i] = P[i] ** (1.0 / i)
-    p_max = max(P_max_array)
-
+    # Step 4: pu := upper bound on most common t-tuple probability
     pu = min(
         1.0, p_max + (2.576 * math.sqrt((p_max * (1.0 - p_max) / (L - 1.0))))
     )
