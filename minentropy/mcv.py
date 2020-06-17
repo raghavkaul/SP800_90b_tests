@@ -4,7 +4,7 @@ from collections import Counter
 from utils import *
 
 
-def mcv(data: Data) -> TestResult:
+def mcv(data: DataSequence) -> TestResult:
     """
     Returns min-entropy estimate from mcv test.
 

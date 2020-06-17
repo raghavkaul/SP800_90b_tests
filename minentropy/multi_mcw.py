@@ -36,7 +36,7 @@ def pfunc(plocal, r, N):
 
 
 def multi_mcw(
-    symbols: Data, verbose=True, ws=[0, 63, 255, 1023, 4095]
+    symbols: DataSequence, verbose=True, ws=[0, 63, 255, 1023, 4095]
 ) -> TestResult:
     # logger.debug("MULTI MCW Test")
     L = len(symbols)

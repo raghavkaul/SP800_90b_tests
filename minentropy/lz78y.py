@@ -18,7 +18,7 @@ def p_local_func(p, r, N):
     return result
 
 
-def lz78y(S: Data, B=16):
+def lz78y(S: DataSequence, B=16):
     # logger.debug("LZ78Y Test")
     L = len(S)
 

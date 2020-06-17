@@ -54,7 +54,7 @@ def bad_nCr(n, r):
     return result
 
 
-def lrs(S: Data, threshold=35):
+def lrs(S: DataSequence, threshold=35):
     # logger.debug("LRS Test")
     L = len(S)
 

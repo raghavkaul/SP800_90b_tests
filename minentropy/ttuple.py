@@ -4,7 +4,7 @@ from utils import *
 from errors import CannotCompute
 
 
-def ttuple(symbols: Data, threshold=35) -> TestResult:
+def ttuple(symbols: DataSequence, threshold=35) -> TestResult:
     L = len(symbols)
 
     # # logger.debug(bits)

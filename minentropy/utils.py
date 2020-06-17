@@ -1,15 +1,30 @@
 import logging
 import sys
-
 from math import gamma, e
-from typing import NamedTuple, Optional
+from numbers import Integral, Number
+from typing import NamedTuple, Optional, Sequence, Union
 
-from encoders import Sequence
-
+# Clean up the namespace a little bit
 __all__ = [
+    # Math constants
+    "e",
+    "gamma",
+    # Data types
+    "DataSequence",
+    "SymbolSequence",
+    # Code organization
     "TestResult",
     "NonIIDMinEntropyTest",
+    # Mathematical functions
+    "upper_incomplete_gamma",
+    "search_for_p",
 ]
+
+
+# TODO: Match np.array as well, e.g. with Intersection[Collection, Iterable, Protocol]
+DataSequence = Sequence[Integral]
+_EntropicSymbol = Union[Number, str]
+SymbolSequence = Sequence[_EntropicSymbol]
 
 
 class TestResult(NamedTuple):
@@ -19,7 +34,7 @@ class TestResult(NamedTuple):
 
 
 class NonIIDMinEntropyTest:
-    def run(self, data: Sequence) -> TestResult:
+    def run(self, data: DataSequence) -> TestResult:
         raise NotImplementedError
 
 

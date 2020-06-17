@@ -1,24 +1,14 @@
 import enum
-import functools
 import logging
-
-from collections import Counter
-from numbers import Integral, Number
-from typing import Sequence, Union
-
 import numpy as np
+from collections import Counter
+
+from utils import *
 
 __all__ = [
-    "DataSequence",
-    "SymbolSequence",
     "bitwise_resize",
     "encode_distinct",
 ]
-
-# TODO: Match np.array as well, e.g. with Intersection[Collection, Iterable, Protocol]
-DataSequence = Sequence[Integral]
-_EntropicSymbol = Union[Number, str]
-SymbolSequence = Sequence[_EntropicSymbol]
 
 
 # Operations to support
@@ -53,10 +43,10 @@ def bitwise_resize(
     if bits_needed_for_data > input_width:
         if input_width > 0:
             logging.warning(
-                f"Specified data width {input_width} was likely inaccurate; there are"
-                f">{len(symbols)} distinct symbols in the input sequence,"
-                f"requiring >={bits_needed_for_data} bits to represent. Assuming input size"
-                f"to be {bits_needed_for_data} bits."
+                f"Specified data width {input_width} was likely inaccurate;"
+                f"there are >{len(symbols)} distinct symbols in the input"
+                f"requiring >={bits_needed_for_data} bits to represent. "
+                f"Assuming input size to be {bits_needed_for_data} bits."
             )
 
         input_width = bits_needed_for_data
@@ -76,8 +66,8 @@ def bitwise_resize(
             )
         else:
             logging.info(
-                "Resizing individual symbols into multiple symbols. This increases"
-                "the amount of symbols, but decreases entropy. If "
+                "Resizing individual symbols into multiple symbols. This "
+                "increases the amount of symbols, but decreases entropy. If "
                 "split('C') = 'A'|'B', then, e.g., 'A' predicts -> 'B'."
             )
     elif input_width < new_bitwidth:
@@ -92,10 +82,11 @@ def bitwise_resize(
         else:
             logging.info(
                 "New symbols are big enough to capture several input symbols."
-                "This effectively reduces the amount of symbols, making a given "
+                "This effectively reduces the amount of symbols, making a "
                 "symbol less probable thereby appearing more entropic."
             )
 
+    logging.debug(f"Resizing data to {new_bitwidth} bits.")
     return [
         int(data[i - new_bitwidth : i], 2)
         for i in range(new_bitwidth, len(data) + 1, new_bitwidth)
@@ -192,7 +183,7 @@ def encode_distinct(
 #             )
 #         )
 #
-#     def encode(self, data: Data) -> Generator:
+#     def encode(self, data: DataSequence) -> Generator:
 #         for data in stream:
 #             if data in encoder:
 #                 yield encoder[data]

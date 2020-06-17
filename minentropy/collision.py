@@ -20,7 +20,7 @@ def pq_func(p):
     return result
 
 
-def _runs_between_collisions(data: Data) -> List[Tuple[int, int]]:
+def _runs_between_collisions(data: DataSequence) -> List[Tuple[int, int]]:
     i = 0
     runs_between_collisions = []
     while i < len(data):
@@ -44,7 +44,7 @@ def _runs_between_collisions(data: Data) -> List[Tuple[int, int]]:
     return runs_between_collisions
 
 
-def collision(data: Data) -> TestResult:
+def collision(data: DataSequence) -> TestResult:
     # FIXME: Non-standard results if data is non-binary
 
     runs = _runs_between_collisions(data)

@@ -17,7 +17,7 @@ def p_local_func(p, r, N):
     return result
 
 
-def multi_mmc_prediction(S: Data, D=16):
+def multi_mmc_prediction(S: DataSequence, D=16):
     # logger.debug("MULTI MMC PREDICTION Test")
     L = len(S)
 

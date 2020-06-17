@@ -35,7 +35,7 @@ def bad_nCr(n, r):
 #    return result
 
 
-def lag_prediction(s: Data, verbose=True, D=128):
+def lag_prediction(s: DataSequence, verbose=True, D=128):
     # logger.debug("LAG PREDICTION Test")
     L = len(s)
 
