@@ -1,73 +1,51 @@
 import math
-
+import numpy as np
 from mpmath import *
 
 from utils import *
+from encoders import bitwise_resize
 
-precision = 300
+# We are about to exponentiate some big numbers
+power_bigint = lambda base, exponent: power(mpf(base), exponent)
 
 
-def markov(bits, symbol_length) -> TestResult:
-    # logger.debug("MARKOV Test")
-    L = len(bits)
+def markov(data: DataSequence) -> TestResult:
+    # TODO: Documentation
+    data = bitwise_resize(data, new_bitwidth=1)
+    L = len(data)
 
-    if symbol_length != 1:
-        # logger.debug(
-        #    "   Warning, Markov test only defined for 1 bit symbols. Setting symbol length to 1",
-        # )
-        pass
+    # Step 1: Get bitwise probabilities
+    counts = np.unique(data, return_counts=True)[1]
+    P0, P1 = counts / L
 
-    # # logger.debug(bits)
-    # logger.debug("  Symbol Length         1")
-    # logger.debug("  Number of bits       ", L)
+    # Step 2: Create a bitwise transition matrix
+    # C[i][j] represents the count of transitions from i->j in a bitstream
+    C = np.zeros((2, 2))
 
-    # step 1
-    count0 = 0
-    for bit in bits:
-        if bit == 0:
-            count0 += 1
-    P0 = count0 / L
-    P1 = 1.0 - P0
+    # NB: Only recording non-overlapping transitions. E.g.:
+    # 0101 -> recorded as N=2 {0->1, 0->1}, not N=3 {0->1, 1->0, 0->1}
+    for i in range(len(data) - 1):
+        C[data[i]][data[i + 1]] += 1
 
-    # Step 2
-    C00 = 0
-    C01 = 0
-    C10 = 0
-    C11 = 0
+    # P[i][j] represents the probability of a transition to j, given i, in a bitstream
+    P00 = C[0][0] / (C[0][0] + C[0][1])
+    P01 = C[0][1] / (C[0][0] + C[0][1])
+    P10 = C[1][0] / (C[1][0] + C[1][1])
+    P11 = C[1][1] / (C[1][0] + C[1][1])
 
-    for i in range(len(bits) - 1):
-        if bits[i] == 0 and bits[i + 1] == 0:
-            C00 += 1
-        if bits[i] == 0 and bits[i + 1] == 1:
-            C01 += 1
-        if bits[i] == 1 and bits[i + 1] == 0:
-            C10 += 1
-        if bits[i] == 1 and bits[i + 1] == 1:
-            C11 += 1
-
-    P00 = mpf(C00 / (C00 + C01))
-    P01 = mpf(C01 / (C00 + C01))
-    P10 = mpf(C10 / (C10 + C11))
-    P11 = mpf(C11 / (C10 + C11))
-
-    # logger.debug("   ", P00, P01)
-    # logger.debug("   ", P10, P11)
-    # Step 3
-
-    p_seq = [0.0] * 6
-    p_seq[0] = P0 * (P00 ** 127)
-    p_seq[1] = P0 * power(P01, 64) * power(P10, 63)
-    p_seq[2] = P0 * P01 * (power(P11, 126))
-    p_seq[3] = P1 * P10 * (power(P00, 126))
-    p_seq[4] = P1 * power(P10, 64) * power(P01, 63)
-    p_seq[5] = P1 * power(P11, 127)
+    # Step 3: Find probabilities of most likely 128-bit sequences
+    # NB: These sequences are defined in the SP-800-90b spec, p.44
+    p_seq = np.zeros(6)
+    p_seq[0] = P0 * power_bigint(P00, 127)
+    p_seq[1] = P0 * power_bigint(P01, 64) * power_bigint(P10, 63)
+    p_seq[2] = P0 * P01 * (power_bigint(P11, 126))
+    p_seq[3] = P1 * P10 * (power_bigint(P00, 126))
+    p_seq[4] = P1 * power_bigint(P10, 64) * power_bigint(P01, 63)
+    p_seq[5] = P1 * power_bigint(P11, 127)
 
     # Step 4
+    p_max = np.max(p_seq)
+    min_entropy = -np.log2(p_max) / 128
+    min_entropy = min(min_entropy, 1)
 
-    p_max = max(p_seq)
-    min_entropy = -math.log(p_max, 2) / 128.0
-    if min_entropy > 1.0:
-        min_entropy = 1.0
-
-    # logger.debug("  Min Entropy per bit  ", min_entropy)
     return TestResult(False, None, min_entropy)

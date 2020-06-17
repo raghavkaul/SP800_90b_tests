@@ -52,7 +52,7 @@ def test_markov():
     import markov
 
     assert_eq(
-        0.761, markov.markov(bits, 1).min_entropy, tolerance=0.001,
+        0.761, markov.markov(bits).min_entropy, tolerance=0.001,
     )
 
 
