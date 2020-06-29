@@ -18,7 +18,7 @@ def lrs(data: SymbolSequence, threshold=35):
     P_max = -math.inf
 
     for i in range(1, L):
-        # Step 2: Let Q[i] := occurrences of most common i-tuple for i in [1, t]
+        # Step 2: Let Q[i] := num occurrences of most common i-tuple for i in [1, t]
         i_tupls = [tuple(data[ndx : ndx + i]) for ndx in range(L - i + 1)]
         i_tuples_counted = Counter(i_tupls)
         most_frequent_i_tupl, Q_i = i_tuples_counted.most_common(1).pop()
@@ -60,10 +60,3 @@ def lrs(data: SymbolSequence, threshold=35):
     min_entropy = min_entropy_per_symbol
 
     return TestResult(False, None, min_entropy)
-
-
-# goodmegrand.bin 1 bit result from NIST Tool
-
-# u: 18
-# v: 37
-# - LRS Estimate: p(max) = 0.500315, min-entropy = 0.999092
