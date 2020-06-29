@@ -1,6 +1,7 @@
 import math
 
 from utils import *
+from errors import InsufficientData
 
 precision = 300
 
@@ -33,6 +34,10 @@ def multi_mmc_prediction(S: DataSequence, D=16):
     # # logger.debug(S)
     # Step 1
     N = L - 2
+
+    if N <= 0:
+        raise InsufficientData
+
     subpredict = [None for x in range(D + 1)]  # add one to start index at one
     entries = [0 for x in range(D + 1)]
     maxEntries = 100000
