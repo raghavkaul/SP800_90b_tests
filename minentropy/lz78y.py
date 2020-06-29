@@ -159,7 +159,6 @@ def lz78y(S: DataSequence, B=16):
         min_plocal=0.0,
         max_plocal=1.0,
         tolerance=0.00000001,
-        verbose=False,
     )
 
     # logger.debug("    p_local              ", p_local)

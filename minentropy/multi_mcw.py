@@ -162,7 +162,7 @@ def multi_mcw(
     # logger.debug("    r                    ", r)
 
     # Binary chop search for Plocal
-    P_local = search_for_p(r, N, verbose=verbose)
+    P_local = search_for_p(r, N)
 
     # logger.debug("   P_local                 ", P_local)
     k = 4  # 2 ** (symbol_length = 2)

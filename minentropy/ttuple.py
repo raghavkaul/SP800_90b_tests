@@ -45,8 +45,4 @@ def ttuple(symbols: SymbolSequence, threshold=35) -> TestResult:
     min_entropy_per_symbol = -math.log(pu, 2.0)
     min_entropy = min_entropy_per_symbol
 
-    # logger.debug(f"   pu                   {pu}")
-    # logger.debug(f"   Symbol Min Entropy   {min_entropy_per_symbol}")
-    # logger.debug(f"   Min Entropy per bit  {min_entropy}")
-
     return TestResult(False, None, min_entropy)

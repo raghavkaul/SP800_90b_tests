@@ -117,7 +117,7 @@ def lag_prediction(s: DataSequence, verbose=True, D=128):
     # logger.debug("    r                    ", r)
 
     # solve_for_p(mu_bar=0.99, n=N, v=r, tolerance=1e-09)
-    P_local = search_for_p(r, N, verbose=verbose)
+    P_local = search_for_p(r, N)
 
     if False:
         # Binary chop search for Plocal
