@@ -2,8 +2,10 @@ import enum
 import logging
 import numpy as np
 from collections import Counter
+from numbers import Integral
 
 from utils import *
+from errors import InsufficientData
 
 __all__ = [
     "bitwise_resize",
@@ -16,11 +18,13 @@ __all__ = [
 # [DONE] Given an input stream of floats, strings, or other categoricals, convert it to a
 #   stream of integers or bitstrings
 # Express the fact that some tests can take strings and others can't
-# Be appropriately noisy when data is changing sizes in a good or bad way, and how it affects entropy
+# [DONE] Be appropriately noisy when data is changing sizes in a good or bad way, and how it affects entropy
 # Push errors/warnings/logs into the type system instead of at runtime.
 
 
 def _to_bitstring(symbols: DataSequence, width: int) -> str:
+    assert width > 0, str(width)
+    assert isinstance(width, Integral), str(width)
     return "".join(format(sym, f"0{width}b") for sym in symbols)
 
 
@@ -38,13 +42,15 @@ def bitwise_resize(
     """
     # TODO: Should suggest coalesce() if max > len?
     # TODO: This is O(n) overhead, just for an error message.
-    bits_needed_for_data = np.ceil(np.log2(max(symbols))).astype(int)
+    bits_needed_for_data = np.ceil(np.log2(max(max(symbols), 1))).astype(int)
+    if bits_needed_for_data <= 0:
+        raise InsufficientData("Insufficient data to perform a bitwise resize.")
 
     if bits_needed_for_data > input_width:
         if input_width > 0:
             logging.warning(
                 f"Specified data width {input_width} was likely inaccurate;"
-                f"there are >{len(symbols)} distinct symbols in the input"
+                f"there are >{len(symbols)} distinct symbols in the input "
                 f"requiring >={bits_needed_for_data} bits to represent. "
                 f"Assuming input size to be {bits_needed_for_data} bits."
             )
@@ -57,11 +63,11 @@ def bitwise_resize(
     data = _to_bitstring(symbols, input_width)
 
     if input_width > new_bitwidth:
-        if new_bitwidth % input_width != 0:
+        if input_width % new_bitwidth != 0:
             logging.warning(
-                "Bitwise resizing by a width that's not a multiple of the"
+                "Bitwise resizing by a width that's not a multiple of the "
                 "original bitwidth will scramble the input data. E.g.: \n"
-                "[1111 0000 0111]/3bits -> [111 100 000 111]. Miscounting the"
+                "[1111 0000 0111]/3bits -> [111 100 000 111]. Miscounting the "
                 "number of duplicates means estimated entropy won't be reliable."
             )
         else:
@@ -74,14 +80,14 @@ def bitwise_resize(
         # TODO: Should output also have padding? Or just get segments of the input?
         if new_bitwidth % input_width != 0:
             logging.warning(
-                "Bitwise resizing by a width that's not a multiple of the"
+                "Bitwise resizing by a width that's not a multiple of the "
                 "original bitwidth will scramble the input data. E.g.: \n"
-                "[111 100 000 111]/4bits -> [1111 0000 0111]. Ignoring real"
+                "[111 100 000 111]/4bits -> [1111 0000 0111]. Ignoring real "
                 "duplicate values means estimated entropy won't be reliable."
             )
         else:
             logging.info(
-                "New symbols are big enough to capture several input symbols."
+                "New symbols are big enough to capture several input symbols. "
                 "This effectively reduces the amount of symbols, making a "
                 "symbol less probable thereby appearing more entropic."
             )

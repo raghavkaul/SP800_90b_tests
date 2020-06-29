@@ -1,23 +1,74 @@
-import math
+import logging
+from math import inf, isclose
+from mpmath import power as exp
+import numpy as np
 from typing import List, Tuple
 
-import numpy as np
-
 from utils import *
+from encoders import bitwise_resize
+from errors import CannotCompute
 
 
-def pq_func(p):
-    q = 1.0 - p
+def F(z):
+    return upper_incomplete_gamma(3, z) * exp(z, -3) * exp(e, z)
 
-    z = 1.0 / q
 
-    print(p, q, e, z)
-    fq = upper_incomplete_gamma(3, z) * (z ** (-3.0)) * (e ** z)
+def _search_for_p(X_bar_goal, bounds=(0.5, 1), previous_err=inf, max_iter=100):
+    """
 
-    result = (p * (q ** -2.0)) * (1.0 + (0.5 * ((1 / p) - (1 / q)))) * fq
-    result = result - ((p * (q ** -1.0)) * 0.5 * ((1 / p) - (1 / q)))
+    :param X_bar_goal:
+    :param bounds:
+    :param previous_err:
+    :param max_iter:
+    :return:
+    """
+    p_closest, err_p_closest = (None, inf)
+    lbound, rbound = bounds
 
-    return result
+    i = 0
+    while i < max_iter:
+        p = (lbound + rbound) / 2
+        q = 1 - p
+        z = exp(q, -1)
+
+        X_bar_computed = p * exp(q, -2)
+        X_bar_computed *= 1 + 0.5 * (exp(p, -1) - exp(q, -1))
+        X_bar_computed *= F(z)
+        X_bar_computed -= (p * exp(q, -1)) * 0.5 * (exp(p, -1) - exp(q, -1))
+
+        # Flogging.debug(
+        #     f"p, q=({p}, {q}); X̄={X_bar_computed} (goal={X_bar_goal})"
+        # )
+
+        if isclose(X_bar_goal, X_bar_computed):
+            return p
+        elif X_bar_computed > X_bar_goal:
+            lbound = p
+        elif X_bar_computed < X_bar_goal:
+            rbound = p
+
+        err = abs(X_bar_computed - X_bar_goal)
+
+        if err < err_p_closest:
+            # This is the closest we have to a result thus far
+            # If the search terminates unsuccessfully, see if this would be appropriate
+            p_closest, err_p_closest = p, err
+
+        if isclose(err, previous_err) or err > previous_err:
+            # logging.debug("Search for an appropriate p-val diverged.")
+            pass
+
+        previous_err = err
+
+        i += 1
+
+    if p_closest and err_p_closest < 0.1:
+        # logging.debug(
+        #     "Didn't find an actual match for p; returning an approximate."
+        # )
+        return p_closest
+
+    raise CannotCompute(f"Couldn't find p within {max_iter} iterations.")
 
 
 def _runs_between_collisions(data: DataSequence) -> List[Tuple[int, int]]:
@@ -46,6 +97,7 @@ def _runs_between_collisions(data: DataSequence) -> List[Tuple[int, int]]:
 
 def collision(data: DataSequence) -> TestResult:
     # FIXME: Non-standard results if data is non-binary
+    data = bitwise_resize(data, 1)
 
     runs = _runs_between_collisions(data)
 
@@ -58,46 +110,8 @@ def collision(data: DataSequence) -> TestResult:
         2.576 * (rl_stdev / np.sqrt(len(run_lengths)))
     )
 
-    print(rl_avg, rl_stdev, rl_avg_lowerbound)
-
-    # Step 7
-    iterations = 1000
-    iteration = 0
-    last_p_mid = -1.0
-    p_min = 0.5
-    p_mid = 0.75
-    p_max = 1.0
-
-    found = False
-    while not found:
-        candidate = pq_func(p_mid)
-        if candidate > rl_avg_lowerbound:
-            p_min = p_mid
-            p_mid = (p_min + p_max) / 2.0
-        elif candidate < rl_avg_lowerbound:
-            p_max = p_mid
-            p_mid = (p_min + p_max) / 2.0
-        elif (candidate == rl_avg_lowerbound) or (p_mid == last_p_mid):
-            found = True
-            p = p_mid
-            break
-        last_p_mid = p_mid
-
-        iteration += 1
-        if iteration > iterations:
-            found = False
-            break
-    # step 8
-
-    if found:
-        if p < 0.5:
-            p = 1.0 - p
-        print("   p =", p)
-        min_entropy = -math.log(p, 2.0)
-        print("   min_entropy =", min_entropy)
-    else:
-        print("   p = 0.5")
-        min_entropy = 1.0
-        print("   min_entropy = 1.0")
+    # TODO: Catch CannotCompute? Check whether to scale H_min by bitlength
+    p = _search_for_p(X_bar_goal=rl_avg_lowerbound)
+    min_entropy = -np.log2(p)
 
     return TestResult(False, None, min_entropy)
