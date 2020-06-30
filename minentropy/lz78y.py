@@ -1,4 +1,6 @@
 import math
+import numpy as np
+from collections import defaultdict
 
 from utils import *
 from errors import InsufficientData
@@ -6,35 +8,9 @@ from errors import InsufficientData
 precision = 300
 
 
-def p_local_func(p, r, N):
-
-    q = 1.0 - p
-
-    x = 1.0
-    for i in range(1, 11):
-        x = 1.0 + q * (p ** r) * (x ** (r + 1))
-    # # logger.debug("     x : ",x)
-    result = (1.0 - (p * x)) / ((r + 1.0 - (r * x)) * q)
-    result = result / (x ** (N + 1))
-    return result
-
-
 def lz78y(S: DataSequence, B=16):
-    # logger.debug("LZ78Y Test")
-    L = len(S)
-
-    # # logger.debug(bits)
-    # logger.debug("    Symbol Length        ", symbol_length)
-    # logger.debug("    Number of bits       ", (L * symbol_length))
-    # logger.debug("    Number of Symbols    ", L)
-
-    # Split bits into integer symbols
-    #   prepend with 0, so the symbols are indexed from 1
-    # # logger.debug(bits)
-    S.insert(0, 0)
-
-    # # logger.debug(S)
     # Step 1
+    L = len(S)
     N = L - B - 1
 
     if N <= 0:
@@ -44,114 +20,63 @@ def lz78y(S: DataSequence, B=16):
     MAX_DICT_SZ = 2 ** 16
 
     # Step 2
-    D = dict()
-    dictionarySize = 0
+    # Map[Data Subsequence -> Map[Subsequent Character, Count]]
+    D = defaultdict(lambda: defaultdict(lambda: -1))
+    S.insert(0, 0)
 
-    # Step 3
-    # logger.debug(
-    #     "    ",
-    #     "i".ljust(4),
-    #     "Add to D".ljust(20),
-    #     "prev".ljust(14),
-    #     "Max D[prev]".ljust(16),
-    #     "prediction".ljust(12),
-    #     "Si".ljust(4),
-    #     "Correct_i-b-1",
-    # )
+    # Step 3. Given a run of data, add it to a dictionary of predictions
+    # This dictionary is loosely based on lz78 Yabba encoding
     for i in range(B + 2, L + 1):
-        add_to_d = list()
-        prevlist = list()
-        maxdlist = list()
-
         for j in range(B, 0, -1):
-            # 3a
-            ss = tuple(S[i - j - 1 : (i - 2) + 1])
-
-            if (ss not in D) and (dictionarySize < maxDictionarySize):
-                D[ss] = dict()
-                D[ss][S[i - 1]] = 0
-                add_to_d.append("D[" + str(ss) + "][" + str(S[i - 1]) + "]")
-                dictionarySize += 1
-            if ss in D:
-                if S[i - 1] not in D[ss]:
-                    D[ss][S[i - 1]] = 0
-                    add_to_d.append("D[" + str(ss) + "][" + str(S[i - 1]) + "]")
-                D[ss][S[i - 1]] = D[ss][S[i - 1]] + 1
+            # NB: tuples "hash" (freeze) lists for dictionary keys
+            substr = tuple(S[i - j - 1 : i - 1])
+            if substr not in D and len(D) >= MAX_DICT_SZ:
+                continue
+            D[substr][S[i - 1]] += 1
 
         # 3b
         prediction = None
-        maxcount = None
+        maxcount = -1
         for j in range(B, 0, -1):
-            prev = tuple(S[i - j : (i - 1) + 1])
-            prevlist.append(str(prev))
-            if prev in D:
-                maxyval = 0
+            preceding_seq = tuple(S[i - j : (i - 1) + 1])
+            if preceding_seq in D:
+                # TODO: Handle ties
+                likeliest, count = max(
+                    D[preceding_seq].items(), key=lambda kv: kv[1]
+                )
 
-                for cy in range(4):  # 4 = 2 ** (symbol_length = 2)
-                    if cy in D[prev]:
-                        if D[prev][cy] >= maxyval:
-                            maxyval = D[prev][cy]
-                            y = cy
-                if (maxcount == None) or (D[prev][y] > maxcount):
-                    prediction = y
-                    maxcount = D[prev][y]
-                    maxdlist.append(maxcount)
+                if count > maxcount:
+                    maxcount = count
+                    prediction = likeliest
+
         if prediction == S[i]:
             correct[i - B - 1] = 1
 
-        # print out table line
-        # # logger.debug(add_to_d)
-        # # logger.debug(prevlist)
-        # # logger.debug(maxdlist)
-        # if verbose:
-        #    for pad in range(20):
-        #        add_to_d.append("-")
-        #        prevlist.append("-")
-        #        maxdlist.append("-")
-        #    for line in range(4):
-        #        if line == 0:
-        #            # logger.debug("    ",str(i).ljust(4),add_to_d[line].ljust(20), prevlist[line].ljust(14), str(maxcount).ljust(16),
-        #                        str(prediction).ljust(12),str(S[i]).ljust(4), correct[i-B-1])
-        #        else:
-        #            # logger.debug("    "," ".ljust(4),add_to_d[line].ljust(20), prevlist[line].ljust(14), str(maxcount).ljust(16),
-        #                        " ".ljust(12)," ".ljust(4), " ")
-    # step 4
-    # C = sum(correct)
-    C = 0
-    for i in correct:
-        if i == 1:
-            C += 1
+    # Step 4. Calculate the predictor's global performance (P_global)
+    # and the upper-bound of its' confidence interval
+    correct_prediction_locs = np.nonzero(correct)[0]
+    num_correct = len(correct_prediction_locs)
 
-    # # logger.debug("    correct              ",correct)
-    p_global = float(C) / float(N)
-    if p_global == 0:
-        p_prime_global = 1 - (0.001 ** (1.0 / N))
+    P_global = num_correct / N
+
+    if P_global == 0:
+        P_global = 1 - (0.01 ** (1 / N))
     else:
-        p_prime_global = min(
-            1.0,
-            p_global
-            + (2.576 * math.sqrt((p_global * (1.0 - p_global)) / (N - 1.0))),
-        )
+        P_global += 2.576 * (np.sqrt((P_global * (1 - P_global)) / (N - 1)))
 
-    # logger.debug("    p_global             ", p_global)
-    # logger.debug("    p_prime_global       ", p_prime_global)
-
-    # Step 5
-    #  Find run of longest ones in correct, to find r
-
-    rlen = 0
-    currentlen = 0
-    for x in correct:
-        if x != 1:
-            currentlen = 0
+    # Step 5. Calculate the predictor's local performance, based on the longest
+    # run of correct predictions.
+    longest_runlen = 0
+    runlen = 1
+    for i in range(1, len(correct_prediction_locs)):
+        if correct_prediction_locs[i - 1] == correct_prediction_locs[i]:
+            runlen += 1
+            longest_runlen = max(longest_runlen, runlen)
         else:
-            currentlen += 1
-            if currentlen > rlen:
-                rlen = currentlen
-    r = 1 + rlen
+            runlen = 1
 
-    # logger.debug("    C                    ", C)
-    # logger.debug("    r                    ", r)
+    # Let r be one greater than the length of the longest run of ones in `correct`
+    r = longest_runlen + 1
 
     #   iteratively find Plocal
     p_local = search_for_p(
@@ -166,7 +91,7 @@ def lz78y(S: DataSequence, B=16):
     # logger.debug("    p_local              ", p_local)
 
     # Step 6
-    pu = max(p_prime_global, p_local, 1.0 / 4)  # 4 = 2 ** (symbolLength=2)
+    pu = max(P_global, p_local, 1.0 / 4)  # 4 = 2 ** (symbolLength=2)
     min_entropy_per_symbol = -math.log(pu, 2)
     min_entropy_per_bit = min_entropy_per_symbol
 

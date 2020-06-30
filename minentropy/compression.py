@@ -55,9 +55,12 @@ def compression(bits: str, d=1000):
 
     # step 1
     b = 6
-    blocks = L // b
 
-    s_prime = [0,] + [int(bits[b * i : b * (i + 1)], 2) for i in range(blocks)]
+    import encoders
+
+    s_prime = encoders.bitwise_resize(bits, new_bitwidth=b)
+    L = len(s_prime)
+    s_prime.insert(0, 0)
 
     # logger.debug("   Number of blocks    ", blocks)
 
@@ -82,7 +85,7 @@ def compression(bits: str, d=1000):
 
     # Step 4
     D = [0,] + [0 for i in range(v)]
-    for i in range(d + 1, blocks + 1):
+    for i in range(d + 1, L + 1):
         # # logger.debug("  i = ",i,end="")
         # # logger.debug("  s_prime[%d]=" % i,s_prime[i])
         if dictionary[s_prime[i]] != 0:
@@ -147,7 +150,6 @@ def compression(bits: str, d=1000):
 
         iteration += 1
 
-    print("   p          =", p_mid)
     # Step 8
     if found:
         min_entropy = -math.log(p_mid, 2) / b
