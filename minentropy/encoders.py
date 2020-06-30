@@ -1,4 +1,3 @@
-import enum
 import logging
 import numpy as np
 from collections import Counter
@@ -101,14 +100,10 @@ def bitwise_resize(
 
 # When encoding categoricals as packed int symbols, should values that are
 # outside of a specified range be A) skipped or B) assigned to a default value?
-Handler = enum.Enum("UnencodableHandler", "drop assign")
 
 
 def encode_distinct(
-    values: SymbolSequence,
-    unencodable_handler: Handler = Handler.drop,
-    max_distinct_values: int = None,
-    start: int = 0,
+    values: SymbolSequence, max_distinct_values: int = None, start: int = 0,
 ) -> DataSequence:
     """ Create an encoder to map CTI data to a numerical value.
 
@@ -125,9 +120,16 @@ def encode_distinct(
 
     encoder_sz = len(unique_values_counted)
 
-    if unencodable_handler == Handler.assign:
+    # If this symbol doesn't have en encoding, replace it with this:
+    # (This happens if there are more symbols than we can fit into a bitvector)
+    if encoder_sz < max_distinct_values:
         start += 1
         encoder_sz -= 1
+        encoding_for_unassigned_data = 0
+    else:
+        # If we don't have space in our encoder for any default values,
+        # drop unencodable values
+        encoding_for_unassigned_data = None
 
     end = start + encoder_sz
 
@@ -136,60 +138,10 @@ def encode_distinct(
         zip([val for (val, count) in unique_values_counted], range(start, end))
     )
 
-    # If this symbol doesn't have en encoding, replace it with this:
-    # (This happens if there are more symbols than we can fit into a bitvector)
-    encoding_for_unassigned_data = None
-
-    if unencodable_handler == Handler.assign:
-        # Assign to a default value
-        encoding_for_unassigned_data = 0
-
     # If data is not found in the encoder, use the default val. handler
-    return [
-        encoder.get(value, encoding_for_unassigned_data)
-        for value in values
-        # Drop None values (not found in encoder)
-        if value is not None
-    ]
-
-
-# class StringEncoder(Encoder):
-#     # def encode(self, source: List):
-#     # max_distinct_values = 256
-#
-#     # We assume that an attacker attempting to analyze common encrypted values
-#     # in a stream would be able to distinguish to subsequent ciphertexts. Given
-#     # external knowledge of likely plaintexts during a specific time range,
-#     # the attacker can map observed ciphertexts to likely plaintexts, especially
-#     # if the cardinality of the plaintext space is low.
-#
-#     def _create_encoder_for_data(
-#         self, values: Iterable[str], max_distinct_values: int
-#     ) -> Dict[str, int]:
-#         """ Create an encoder to map CTI data to a numerical value.
-#
-#         Because we are measuring entropy of a categorical variable instead of a
-#         discrete variable, we need to map data to a numerical representation.
-#         """
-#
-#         # Get top N unique values by counts
-#         unique_values_counted = sorted(
-#             Counter(values).most_common(max_distinct_values),
-#             key=lambda kv: kv[1],  # Sort by count
-#             reverse=True,  # Most common first
-#         )
-#
-#         encoder_sz = len(unique_values_counted)
-#
-#         # Create an encoder, assigning most frequently-seen values lower codes.
-#         return dict(
-#             zip(
-#                 [val for (val, count) in unique_values_counted],
-#                 range(1, encoder_sz + 1),
-#             )
-#         )
-#
-#     def encode(self, data: DataSequence) -> Generator:
-#         for data in stream:
-#             if data in encoder:
-#                 yield encoder[data]
+    result = []
+    for value in values:
+        encoded = encoder.get(value, encoding_for_unassigned_data)
+        if encoded is not None:  # value couldn't fit into encoder
+            result.append(encoded)
+    return result
