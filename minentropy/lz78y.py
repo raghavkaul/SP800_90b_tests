@@ -1,6 +1,7 @@
 import math
 
 from utils import *
+from errors import InsufficientData
 
 precision = 300
 
@@ -36,10 +37,11 @@ def lz78y(S: DataSequence, B=16):
     # Step 1
     N = L - B - 1
 
-    # logger.debug("    B                    ", B)
-    # logger.debug("    N                    ", N)
-    correct = [0 for x in range(N + 1)]
-    maxDictionarySize = 65536
+    if N <= 0:
+        raise InsufficientData(f"Need >{B + 1} samples for lz78y test.")
+
+    correct = np.zeros(N + 1)
+    MAX_DICT_SZ = 2 ** 16
 
     # Step 2
     D = dict()

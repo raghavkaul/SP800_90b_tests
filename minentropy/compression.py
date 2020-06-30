@@ -45,7 +45,9 @@ def compression(bits: str, d=1000):
     L = len(bits)
 
     if L < d:
-        raise CannotCompute
+        raise InsufficientData(
+            f"Need >d={d} samples for compression test, have {L}"
+        )
 
     # # logger.debug(bits)
     # logger.debug("   Symbol Length        1")
@@ -61,7 +63,11 @@ def compression(bits: str, d=1000):
 
     # Step 2
     dict_data = s_prime[1 : d + 1]
-    v = blocks - d
+    v = L - d
+    if v <= 0:
+        raise InsufficientData(
+            f"Need >{d} samples for compression test, have {L} blocks (blksz={b})"
+        )
     test_data = s_prime[d + 1 :]
 
     # logger.debug("   v                   ", v)
