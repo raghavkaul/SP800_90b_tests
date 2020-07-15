@@ -92,7 +92,7 @@ def test_compression():
     # fmt: off
     bits = [1, 0, 0, 0, 1, 1, 1, 0, 0, 1, 0, 1, 0, 1, 0, 1, 1, 1, 0, 0, 1, 1, 0, 0, 0, 1, 1, 1, 0, 0, 1, 0, 1, 0, 1, 0, 1, 1, 1, 0, 1, 1, 1, 0, 0, 0, 1, 1]
     # fmt: on
-    bits = "".join(map(str, bits))
+    # bits = "".join(map(str, bits))
 
     import compression
 

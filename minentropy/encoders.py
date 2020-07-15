@@ -43,13 +43,15 @@ def bitwise_resize(
     # TODO: This is O(n) overhead, just for an error message.
     bits_needed_for_data = np.ceil(np.log2(max(max(symbols), 1))).astype(int)
     if bits_needed_for_data <= 0:
-        raise InsufficientData("Insufficient data to perform a bitwise resize.")
+        raise InsufficientData(
+            f"Insufficient data to perform a bitwise resize (N={num_unique_symbols} L = {len(symbols)})."
+        )
 
     if bits_needed_for_data > input_width:
         if input_width > 0:
             logging.warning(
                 f"Specified data width {input_width} was likely inaccurate;"
-                f"there are >{len(symbols)} distinct symbols in the input "
+                f"there are {num_unique_symbols} distinct symbols in the input "
                 f"requiring >={bits_needed_for_data} bits to represent. "
                 f"Assuming input size to be {bits_needed_for_data} bits."
             )

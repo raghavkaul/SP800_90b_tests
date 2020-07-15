@@ -40,14 +40,12 @@ def G(z, v, d, L):
 from typing import List
 
 
-def compression(bits: str, d=1000):
+def compression(bits: DataSequence, d=1000):
     # logger.debug("COMPRESSION Test")
     L = len(bits)
 
     if L < d:
-        raise InsufficientData(
-            f"Need >d={d} samples for compression test, have {L}"
-        )
+        raise InsufficientData(f"Need >d={d} samples, have {L}")
 
     # # logger.debug(bits)
     # logger.debug("   Symbol Length        1")
