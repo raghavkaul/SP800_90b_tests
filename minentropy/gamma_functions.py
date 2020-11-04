@@ -1,5 +1,3 @@
-#!/usr/bin/env python
-
 from math import gamma, e
 
 # Continued Fraction Computation
@@ -13,7 +11,9 @@ def upper_incomplete_gamma(a, x, d=0, iterations=100):
             m = d / 2
             return x + (m - a)
     if d == 0:
-        result = ((x ** a) * (e ** (-x))) / upper_incomplete_gamma(a, x, d=d + 1)
+        result = ((x ** a) * (e ** (-x))) / upper_incomplete_gamma(
+            a, x, d=d + 1
+        )
         return result
     elif (d % 2) == 1:
         m = 1.0 + ((d - 1.0) / 2.0)
@@ -29,11 +29,17 @@ def upper_incomplete_gamma2(a, x, d=0, iterations=100):
     if d == iterations:
         return 1.0
     if d == 0:
-        result = ((x ** a) * (e ** (-x))) / upper_incomplete_gamma2(a, x, d=d + 1)
+        result = ((x ** a) * (e ** (-x))) / upper_incomplete_gamma2(
+            a, x, d=d + 1
+        )
         return result
     else:
         m = (d * 2) - 1
-        return (m - a) + x + ((d * (a - d)) / (upper_incomplete_gamma2(a, x, d=d + 1)))
+        return (
+            (m - a)
+            + x
+            + ((d * (a - d)) / (upper_incomplete_gamma2(a, x, d=d + 1)))
+        )
 
 
 def lower_incomplete_gamma(a, x, d=0, iterations=100):
@@ -44,7 +50,9 @@ def lower_incomplete_gamma(a, x, d=0, iterations=100):
             m = d / 2
             return x + (m - a)
     if d == 0:
-        result = ((x ** a) * (e ** (-x))) / lower_incomplete_gamma(a, x, d=d + 1)
+        result = ((x ** a) * (e ** (-x))) / lower_incomplete_gamma(
+            a, x, d=d + 1
+        )
         return result
     elif (d % 2) == 1:
         m = d - 1

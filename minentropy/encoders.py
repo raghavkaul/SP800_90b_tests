@@ -41,7 +41,8 @@ def bitwise_resize(
     """
     # TODO: Should suggest coalesce() if max > len?
     # TODO: This is O(n) overhead, just for an error message.
-    bits_needed_for_data = np.ceil(np.log2(max(max(symbols), 1))).astype(int)
+    num_unique_symbols = len(np.unique(symbols))
+    bits_needed_for_data = np.ceil(np.log2(num_unique_symbols)).astype(int)
     if bits_needed_for_data <= 0:
         raise InsufficientData(
             f"Insufficient data to perform a bitwise resize (N={num_unique_symbols} L = {len(symbols)})."
@@ -112,6 +113,9 @@ def encode_distinct(
     Because we are measuring entropy of a categorical variable instead of a
     discrete variable, we need to map data to a numerical representation.
     """
+
+    if max_distinct_values is None:
+        max_distinct_values = bitwidth_of_symbols(values)
 
     # Get top N unique values by counts
     unique_values_counted = sorted(

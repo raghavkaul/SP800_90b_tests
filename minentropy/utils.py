@@ -1,9 +1,11 @@
 import logging
 import math
+import numpy as np
 import sys
 from math import gamma, e
 from numbers import Integral, Number
-from typing import NamedTuple, Optional, Sequence, Union
+from typing import Dict, NamedTuple, Optional, Sequence, Union
+from dataclasses import dataclass, field
 
 # Clean up the namespace a little bit
 __all__ = [
@@ -13,9 +15,13 @@ __all__ = [
     # Data types
     "DataSequence",
     "SymbolSequence",
+    "bitwidth_of_symbols",
     # Code organization
     "TestResult",
     "NonIIDMinEntropyTest",
+    # Data structures & algs
+    "Trie",
+    "print_trie",
     # Mathematical functions
     "upper_probability_bound",
     "upper_incomplete_gamma",
@@ -38,6 +44,58 @@ class TestResult(NamedTuple):
 class NonIIDMinEntropyTest:
     def run(self, data: DataSequence) -> TestResult:
         raise NotImplementedError
+
+
+def bitwidth_of_symbols(seq: SymbolSequence):
+    return len(np.unique(seq))
+
+
+@dataclass
+class Trie:
+    """ Basic trie struct: each node represents a single character. """
+
+    val: SymbolSequence
+    count: int = 0
+    # TODO: Support compression st. a subtree where all counts = 1 is a single node
+    children: Dict[SymbolSequence, "Trie"] = field(default_factory=dict)
+
+    def is_leaf(self) -> bool:
+        """ Is this node a leaf node? """
+        return not self.children
+
+    def add(self, val: SymbolSequence, start=0, end=None):
+        """ Add value to trie. """
+        root = self
+
+        if end is None:
+            end = len(val)
+
+        i = start
+
+        while i < end:
+            # print(f"Adding {val} to subtrie...")
+            child = root.children.get(val[i], None)
+
+            if child is not None:
+                root = child
+            else:
+                new_node = Trie(val[i:])
+                root.children[val[i:]] = new_node
+                root = new_node
+
+                i = end
+
+            i += 1
+
+            root.count += 1
+
+        return root.count
+
+
+def print_trie(root: Trie, depth=0):
+    print("\t" * (depth - 1) + "L____" + str(root.val) + f"={root.count}")
+    for child in root.children.values():
+        print_trie(child, depth + 1)
 
 
 # TestResult = typing.Tuple[bool, typing.Optional[float], float]
@@ -81,9 +139,7 @@ def search_for_p(
     # # logger.debug("SEARCH FOR P")
     # # logger.debug(f'min {min_plocal}  max {max_plocal} verbose={verbose} r={r} N={N}')
     while iteration < iterations:
-        candidate = (
-            min_plocal + max_plocal
-        ) / 2.0  # start in the middle of the range
+        candidate = (min_plocal + max_plocal) / 2.0  # start in the middle of the range
         result = pfunc(candidate, r, N)
         # print ("iteration =",iteration)
         # if verbose:
@@ -199,9 +255,7 @@ def upper_incomplete_gamma(a, x, d=0, iterations=100):
             m = d / 2
             return x + (m - a)
     if d == 0:
-        result = ((x ** a) * (e ** (-x))) / upper_incomplete_gamma(
-            a, x, d=d + 1
-        )
+        result = ((x ** a) * (e ** (-x))) / upper_incomplete_gamma(a, x, d=d + 1)
         return result
     elif (d % 2) == 1:
         m = 1.0 + ((d - 1.0) / 2.0)
@@ -217,17 +271,11 @@ def upper_incomplete_gamma2(a, x, d=0, iterations=100):
     if d == iterations:
         return 1.0
     if d == 0:
-        result = ((x ** a) * (e ** (-x))) / upper_incomplete_gamma2(
-            a, x, d=d + 1
-        )
+        result = ((x ** a) * (e ** (-x))) / upper_incomplete_gamma2(a, x, d=d + 1)
         return result
     else:
         m = (d * 2) - 1
-        return (
-            (m - a)
-            + x
-            + ((d * (a - d)) / (upper_incomplete_gamma2(a, x, d=d + 1)))
-        )
+        return (m - a) + x + ((d * (a - d)) / (upper_incomplete_gamma2(a, x, d=d + 1)))
 
 
 def lower_incomplete_gamma(a, x, d=0, iterations=100):
@@ -238,9 +286,7 @@ def lower_incomplete_gamma(a, x, d=0, iterations=100):
             m = d / 2
             return x + (m - a)
     if d == 0:
-        result = ((x ** a) * (e ** (-x))) / lower_incomplete_gamma(
-            a, x, d=d + 1
-        )
+        result = ((x ** a) * (e ** (-x))) / lower_incomplete_gamma(a, x, d=d + 1)
         return result
     elif (d % 2) == 1:
         m = d - 1
